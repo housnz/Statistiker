@@ -54,8 +54,8 @@ export interface Action {
   element: ElementKey;
   result: string;
   pos?: number; // Position auf dem Feld (Angriff 1 bis 6, Annahme 1, 5, 6)
-  from?: number; // Profi: Startzone 1 bis 9
-  to?: number; // Profi: Zielzone 1 bis 9
+  from?: number; // Profi: Startzone 1 bis 6
+  to?: number; // Profi: Zielzone 1 bis 6 im gegnerischen Feld
   ts: number;
 }
 

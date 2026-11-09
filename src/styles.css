@@ -104,7 +104,7 @@ table.data th.grp { text-align: center; border-bottom: 2px solid var(--brand); c
 .hero { display: flex; align-items: center; gap: 18px; padding: 22px; border-radius: 20px; color: #fff;
   background: linear-gradient(120deg, var(--brand), color-mix(in srgb, var(--brand) 70%, #000)); box-shadow: var(--shadow); }
 .hero h1 { margin: 0; font-size: 32px; }
-.hero .logo-wrap { background: #fff; border-radius: 50%; padding: 6px; }
+.hero .logo-wrap { filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .25)); }
 .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0; }
 .tile { min-height: 110px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow);
   display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 16px; text-align: left; gap: 4px; }

@@ -15,11 +15,12 @@ interface Props {
 }
 
 const OWN_ROWS = [[4, 3, 2], [5, 6, 1]];
-const OPP_ROWS = [[1, 6, 5], [9, 8, 7], [2, 3, 4]];
+// Gegnerfeld von unserer Seite gesehen: hinten 1 6 5, vorne am Netz 2 3 4.
+const OPP_ROWS = [[1, 6, 5], [2, 3, 4]];
 
 export function Court(p: Props) {
   const W = 300;
-  const oppH = p.showOpp ? 210 : 0;
+  const oppH = p.showOpp ? 200 : 0;
   const gap = p.showOpp ? 22 : 18;
   const ownH = 200;
   const H = oppH + gap + ownH;
@@ -35,8 +36,8 @@ export function Court(p: Props) {
               const cls = !p.oppActive ? 'z off' : p.oppValue === z ? 'z on' : p.askOpp ? 'z ask' : 'z';
               return (
                 <g class={cls} onClick={() => p.oppActive && p.onOpp?.(z)} data-zone={`opp-${z}`}>
-                  <rect x={c * cellW} y={r * 70} width={cellW} height={70} rx={4} />
-                  <text x={c * cellW + cellW / 2} y={r * 70 + 35}>{z}</text>
+                  <rect x={c * cellW} y={r * 100} width={cellW} height={100} rx={4} />
+                  <text x={c * cellW + cellW / 2} y={r * 100 + 50}>{z}</text>
                 </g>
               );
             }),

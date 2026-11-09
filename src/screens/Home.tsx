@@ -26,7 +26,7 @@ export function Home() {
   return (
     <div class="page">
       <div class="hero">
-        <div class="logo-wrap"><Logo size={72} /></div>
+        <div class="logo-wrap"><Logo size={92} /></div>
         <div>
           <h1>Statistiker</h1>
           <div style={{ opacity: 0.9, fontWeight: 600 }}>{t?.name}</div>
