@@ -3,9 +3,20 @@
 export type Position = 'Außen' | 'Mitte' | 'Diagonal' | 'Zuspiel' | 'Libero' | '';
 export const POSITIONS: Position[] = ['Außen', 'Mitte', 'Diagonal', 'Zuspiel', 'Libero'];
 
+/** Damen, Herren oder Mixed. Steuert die Anrede (Spielerin oder Spieler). */
+export type Kategorie = 'damen' | 'herren' | 'mixed';
+export const KATEGORIEN: { key: Kategorie; label: string }[] = [
+  { key: 'damen', label: 'Damen / weiblich' },
+  { key: 'herren', label: 'Herren / männlich' },
+  { key: 'mixed', label: 'Mixed' },
+];
+
+/** Eine Mannschaft mit eigenem Kader und eigenen Spielen. */
 export interface Team {
   id?: number;
   name: string;
+  kategorie?: Kategorie; // fehlt bei alten Daten, dann gilt 'damen'
+  liga?: string; // z. B. Landesliga, U16 Oberliga
   logo?: string; // Bild als data-URL
   color1: string; // Vereinsfarbe 1
   color2: string; // Vereinsfarbe 2

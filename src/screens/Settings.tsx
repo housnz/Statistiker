@@ -1,14 +1,18 @@
 import { useRef } from 'preact/hooks';
 import { db, downloadFile, exportBackup, importBackup } from '../db';
 import { createDemoTeam } from '../demo';
-import { ELEMENTS, Team } from '../model';
+import { ELEMENTS, Kategorie, Team } from '../model';
 import { prefs, savePrefs } from '../prefs';
-import { applyTeamColors, ask, askText, go, reloadTeam, team, toast, todayIso, useLive } from '../state';
+import { applyTeamColors, ask, deleteTeam, go, reloadTeam, switchTeam, team, toast, todayIso, useLive } from '../state';
+import { KategorieSeg } from './Teams';
 
 export function Settings() {
   const t = team.value!;
   const p = prefs.value;
-  const teams = useLive(() => db.teams.toArray(), [], [] as Team[]);
+  const counts = useLive(async () => ({
+    players: await db.players.where('teamId').equals(t.id!).filter((x) => x.active).count(),
+    matches: await db.matches.where('teamId').equals(t.id!).count(),
+  }), [t.id], { players: 0, matches: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
@@ -57,15 +61,14 @@ export function Settings() {
     }
   };
 
-  const switchTeam = async (id: number) => {
-    await savePrefs({ teamId: id });
-    await reloadTeam();
-  };
-  const newTeam = async () => {
-    const name = await askText('Name des neuen Teams?', 'z. B. VC Weil Damen 2', 'Anlegen');
-    if (!name) return;
-    const id = await db.teams.add({ name, color1: '#1f5fbf', color2: '#f5c518' });
-    await switchTeam(id);
+  const removeTeam = async () => {
+    const ok = await ask(
+      `Mannschaft „${t.name}“ löschen? Dabei werden der Kader (${counts.players} ${counts.players === 1 ? 'Person' : 'Personen'}) und ${counts.matches} ${counts.matches === 1 ? 'Spiel' : 'Spiele'} dieser Mannschaft gelöscht. Andere Mannschaften bleiben unverändert.`,
+      'Endgültig löschen',
+    );
+    if (!ok) return;
+    await deleteTeam(t.id!);
+    toast('Mannschaft gelöscht');
   };
   const demo = async () => {
     const id = await createDemoTeam();
@@ -88,8 +91,10 @@ export function Settings() {
 
       <div class="grid2">
         <div class="card stack">
-          <h2>Team</h2>
-          <label class="field">Name<input value={t.name} onChange={(e) => updTeam({ name: (e.target as HTMLInputElement).value })} /></label>
+          <h2>Mannschaft · {t.name}</h2>
+          <label class="field">Name<input id="team-name-edit" value={t.name} onChange={(e) => updTeam({ name: (e.target as HTMLInputElement).value })} /></label>
+          <div class="field"><span>Kategorie</span><KategorieSeg value={t.kategorie ?? 'damen'} onChange={(k: Kategorie) => updTeam({ kategorie: k })} /></div>
+          <label class="field">Liga oder Altersklasse<input id="team-liga-edit" value={t.liga ?? ''} placeholder="optional" onChange={(e) => updTeam({ liga: (e.target as HTMLInputElement).value.trim() })} /></label>
           <div class="row">
             <label class="field">Vereinsfarbe 1<input class="swatch" type="color" value={t.color1} onInput={(e) => updTeam({ color1: (e.target as HTMLInputElement).value })} /></label>
             <label class="field">Vereinsfarbe 2<input class="swatch" type="color" value={t.color2} onInput={(e) => updTeam({ color2: (e.target as HTMLInputElement).value })} /></label>
@@ -103,13 +108,8 @@ export function Settings() {
               <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogo} />
             </div>
           </div>
-          <div class="field">
-            <span class="small muted" style={{ fontWeight: 600 }}>Team wechseln</span>
-            <div class="row">
-              {teams.map((x) => <button class={`chip ${x.id === t.id ? 'on' : ''}`} onClick={() => switchTeam(x.id!)}>{x.name}</button>)}
-              <button class="chip" onClick={newTeam}>＋ neues Team</button>
-            </div>
-          </div>
+          <p class="small muted" style={{ margin: 0 }}>Mannschaft wechseln oder neu anlegen geht auf der Startseite und im Kader.</p>
+          <div class="row"><button class="btn danger" onClick={removeTeam}>Mannschaft löschen</button></div>
         </div>
 
         <div class="card stack">
@@ -162,7 +162,7 @@ export function Settings() {
 
         <div class="card stack">
           <h2>Ausprobieren</h2>
-          <p class="small muted" style={{ margin: 0 }}>Legt ein zusätzliches Demo-Team mit erfundenen Namen und einem Beispielspiel an. Dein eigenes Team bleibt unverändert.</p>
+          <p class="small muted" style={{ margin: 0 }}>Legt ein zusätzliches Demo-Team mit erfundenen Namen und einem Beispielspiel an. Deine eigenen Mannschaften bleiben unverändert.</p>
           <div class="row"><button class="btn" onClick={demo}>Demo-Team anlegen</button></div>
           <p class="small muted" style={{ margin: 0 }}>PDF- und Excel-Export folgen im nächsten Schritt.</p>
         </div>

@@ -2,7 +2,7 @@
 import { signal } from '@preact/signals';
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'preact/hooks';
-import type { Team } from './model';
+import type { Kategorie, Team } from './model';
 import { db, ensureTeam } from './db';
 import { prefs, savePrefs } from './prefs';
 
@@ -83,4 +83,44 @@ export function ask(text: string, ok = 'Ja'): Promise<boolean> {
 /** Frage mit Texteingabe. Ergibt null bei Abbrechen. */
 export function askText(text: string, placeholder = '', ok = 'OK'): Promise<string | null> {
   return new Promise((res) => (askState.value = { text, ok, input: { placeholder }, resolve: res }));
+}
+
+// ---------- Mannschaften ----------
+
+/** Anrede passend zur Mannschaft: Damen "Spielerin", Herren und Mixed "Spieler". */
+export function words(t: Team | null = team.value) {
+  const m = t?.kategorie === 'herren' || t?.kategorie === 'mixed';
+  return {
+    one: m ? 'Spieler' : 'Spielerin',
+    many: m ? 'Spieler' : 'Spielerinnen',
+    top: m ? 'Top-Scorer' : 'Top-Scorerin',
+  };
+}
+
+export async function switchTeam(id: number) {
+  await savePrefs({ teamId: id });
+  await reloadTeam();
+}
+
+export async function createTeam(name: string, kategorie: Kategorie, liga: string): Promise<number> {
+  const cur = team.value;
+  const id = await db.teams.add({
+    name, kategorie, liga, color1: cur?.color1 ?? '#1f5fbf', color2: cur?.color2 ?? '#f5c518', logo: cur?.logo,
+  });
+  await switchTeam(id);
+  return id;
+}
+
+/** Löscht eine Mannschaft mit Kader, Spielen und allen Aktionen. */
+export async function deleteTeam(id: number) {
+  await db.transaction('rw', [db.teams, db.players, db.matches, db.actions], async () => {
+    const matchIds = (await db.matches.where('teamId').equals(id).toArray()).map((m) => m.id!);
+    await db.actions.where('matchId').anyOf(matchIds).delete();
+    await db.matches.where('teamId').equals(id).delete();
+    await db.players.where('teamId').equals(id).delete();
+    await db.teams.delete(id);
+  });
+  const next = await db.teams.toCollection().first();
+  await savePrefs({ teamId: next?.id ?? null });
+  await reloadTeam();
 }

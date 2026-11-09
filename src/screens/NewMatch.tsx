@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { db } from '../db';
 import type { Mode, Player } from '../model';
 import { prefs } from '../prefs';
-import { go, team, todayIso, useLive } from '../state';
+import { go, team, todayIso, useLive, words } from '../state';
 
 export function NewMatch() {
   const t = team.value!;
@@ -14,7 +14,7 @@ export function NewMatch() {
   const [opponent, setOpponent] = useState('');
   const [date, setDate] = useState(todayIso());
   const [place, setPlace] = useState('');
-  const [league, setLeague] = useState('');
+  const [league, setLeague] = useState(t.liga ?? '');
   const [mode, setMode] = useState<Mode>(prefs.value.defaultMode);
   const [off, setOff] = useState<Set<number>>(new Set());
 
@@ -37,7 +37,7 @@ export function NewMatch() {
     <div class="page">
       <div class="topbar">
         <button class="btn" onClick={() => go({ name: 'home' })}>‹ Zurück</button>
-        <h1>Neues Spiel</h1>
+        <h1>Neues Spiel · {t.name}</h1>
         <div class="spacer" />
         <button class="btn primary big" onClick={start} disabled={!selected.length}>Los geht's ▶</button>
       </div>
@@ -56,7 +56,7 @@ export function NewMatch() {
               <button class={mode === 'profi' ? 'on' : ''} onClick={() => setMode('profi')}>Profi</button>
             </div>
             <span class="small muted">
-              {mode === 'simpel' ? 'Wie der Papierbogen: Spielerin, Element, Ergebnis, Position.' : 'Zusätzlich Start- und Zielzone, Zuspiel und Abwehr.'}
+              {mode === 'simpel' ? `Wie der Papierbogen: ${words().one}, Element, Ergebnis, Position.` : 'Zusätzlich Start- und Zielzone, Zuspiel und Abwehr.'}
             </span>
           </div>
         </div>

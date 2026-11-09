@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { Logo } from '../logo';
-import { fmtDate, go, team, useLive } from '../state';
+import { fmtDate, go, team, useLive, words } from '../state';
+import { TeamBar } from './Teams';
 import type { Match } from '../model';
 
 export function setsWon(m: Match): [number, number] {
@@ -29,11 +30,13 @@ export function Home() {
         <div class="logo-wrap"><Logo size={92} /></div>
         <div>
           <h1>Statistiker</h1>
-          <div style={{ opacity: 0.9, fontWeight: 600 }}>{t?.name}</div>
+          <div style={{ opacity: 0.9, fontWeight: 600 }}>{t?.name}{t?.liga ? ` · ${t.liga}` : ''}</div>
         </div>
         <div style={{ flex: 1 }} />
         {t?.logo && <img src={t.logo} alt="" style={{ height: 72, maxWidth: 140, objectFit: 'contain', background: '#fff', borderRadius: 12, padding: 6 }} />}
       </div>
+
+      <TeamBar />
 
       <div class="tiles">
         {running ? (
@@ -46,7 +49,7 @@ export function Home() {
           </button>
         )}
         <button class="tile" onClick={() => go({ name: 'roster' })}>
-          <span class="ic">👥</span><b>Kader</b><span class="small muted">{playerCount} Spielerinnen</span>
+          <span class="ic">👥</span><b>Kader</b><span class="small muted">{playerCount} {words().many}</span>
         </button>
         <button class="tile" disabled title="kommt im nächsten Schritt" style={{ opacity: 0.55 }}>
           <span class="ic">📝</span><b>Bogen nachtragen</b><span class="small muted">kommt bald</span>

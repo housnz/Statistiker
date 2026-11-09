@@ -5,7 +5,7 @@ import {
 } from '../model';
 import { prefs } from '../prefs';
 import { setSummary } from '../stats';
-import { go, toast, useLive } from '../state';
+import { go, toast, useLive, words } from '../state';
 import { Court } from './Court';
 
 interface Draft {
@@ -119,12 +119,13 @@ export function Scout({ matchId }: { matchId: number }) {
   const n = needs(d, profi);
   const dist = distribution(distScope === 'set' ? setActions : actions);
 
-  let hint = 'Spielerin antippen';
+  const pick = `${words().one} antippen`;
+  let hint = pick;
   if (d.playerId != null && !d.element) hint = 'Element wählen';
   else if (d.element && !d.result) hint = 'Ergebnis wählen';
   else if (n.pos) hint = d.element === 'rec' ? 'Annahmeposition auf dem Feld antippen' : 'Angriffsposition auf dem Feld antippen';
   else if (n.to) hint = 'Zielzone im gegnerischen Feld antippen';
-  else if (d.playerId == null && d.element) hint = 'Spielerin antippen';
+  else if (d.playerId == null && d.element) hint = pick;
 
   const ownZones = el?.positions ?? [];
   const oppActive = profi && !!el?.zones?.to && !(d.element === 'srv' && d.result === 'E');
@@ -194,7 +195,7 @@ export function Scout({ matchId }: { matchId: number }) {
               <div class="hint">{hint}</div>
             )}
             <div class="pending" style={{ marginTop: 8 }}>
-              <span class="muted small">{hint === 'Spielerin antippen' && !d.element ? '' : hint}</span>
+              <span class="muted small">{hint === pick && !d.element ? '' : hint}</span>
               <span style={{ flex: 1 }} />
               {(n.to) && <button class="btn" onClick={() => setD({ ...d, dirty: true, noZone: true })}>ohne Zone</button>}
               {d.editId != null && <button class="btn danger" onClick={deleteEdit}>Löschen</button>}

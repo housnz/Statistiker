@@ -3,7 +3,7 @@ import { db } from '../db';
 import type { Action, Match, Player } from '../model';
 import { distribution } from '../model';
 import { PlayerStats, pctLabel, setSummary, statsByPlayer, teamStats } from '../stats';
-import { fmtDate, go, team, useLive } from '../state';
+import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
 
@@ -22,6 +22,7 @@ export function Report({ matchId }: { matchId: number }) {
 
   const byPlayer = useMemo(() => statsByPlayer(actions), [actions]);
   const tot = useMemo(() => teamStats(actions), [actions]);
+  const W = words();
   if (!match) return <div class="page">Lade …</div>;
 
   const sets = match.sets.filter((s) => s.final || actions.some((a) => a.set === s.nr));
@@ -58,7 +59,7 @@ export function Report({ matchId }: { matchId: number }) {
       </div>
 
       <div class="kpis">
-        <Kpi l="Top-Scorerin" v={top ? `${top.s.points}` : '0'} s={top ? top.p.name : ''} />
+        <Kpi l={W.top} v={top ? `${top.s.points}` : '0'} s={top ? top.p.name : ''} />
         <Kpi l="Kill-Quote" v={pctLabel(tot.attK, tot.att)} s={`${tot.attK} Punkte aus ${tot.att} Angriffen`} />
         <Kpi l="Asse" v={`${tot.srvA}`} s={`${tot.srvE} Aufschlagfehler bei ${tot.srv} Aufschlägen`} />
         <Kpi l="Annahme positiv" v={pctLabel(recPos, tot.rec)} s={`${tot.recP} perfekt, ${tot.recG} gut, ${tot.recE} Fehler`} />
@@ -89,7 +90,7 @@ export function Report({ matchId }: { matchId: number }) {
       </div>
 
       <div class="card" style={{ marginBottom: 16 }}>
-        <h2>Alle Werte pro Spielerin</h2>
+        <h2>Alle Werte pro {W.one}</h2>
         <div class="scroll-x">
           <table class="data">
             <thead>
@@ -103,7 +104,7 @@ export function Report({ matchId }: { matchId: number }) {
                 <th class="grp">Sonst.</th>
               </tr>
               <tr>
-                <th>Spielerin</th>
+                <th>{W.one}</th>
                 <th>Pkt</th><th>Fehler</th><th>Bilanz</th>
                 <th>Ges.</th><th>Pkt</th><th>geb.</th><th>Fehler</th><th>Kill</th><th>Eff.</th>
                 <th>Ges.</th><th>Ass</th><th>Fehler</th>

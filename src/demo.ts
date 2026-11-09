@@ -9,7 +9,7 @@ const NAMES: [string, number, Player['position']][] = [
 ];
 
 export async function createDemoTeam(): Promise<number> {
-  const teamId = await db.teams.add({ name: 'Demo-Team', color1: '#1f5fbf', color2: '#f5c518' });
+  const teamId = await db.teams.add({ name: 'Demo-Team', kategorie: 'damen', liga: 'Testliga', color1: '#1f5fbf', color2: '#f5c518' });
   const ids: number[] = [];
   for (let i = 0; i < NAMES.length; i++) {
     const [name, number, position] = NAMES[i];

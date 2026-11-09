@@ -42,7 +42,7 @@ export async function requestPersistence(): Promise<boolean> {
 export async function ensureTeam(): Promise<Team> {
   const first = await db.teams.toCollection().first();
   if (first) return first;
-  const id = await db.teams.add({ name: 'Mein Team', color1: '#1f5fbf', color2: '#f5c518' });
+  const id = await db.teams.add({ name: 'Meine Mannschaft', kategorie: 'damen', color1: '#1f5fbf', color2: '#f5c518' });
   return (await db.teams.get(id))!;
 }
 

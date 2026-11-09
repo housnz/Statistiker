@@ -16,6 +16,10 @@ Stand 9. November 2026, erster Prototyp.
 
 - **Logo:** Bild von Momo (mit ChatGPT erstellt, 9.11.2026): weißer Volleyball mit schwarzer Nerd-Brille und Statistik-Klemmbrett auf rotem Grund. Ersetzt den eigenen SVG-Entwurf in Blau-Gelb.
 
+- **Mehrere Mannschaften** (9.11.2026): jede Mannschaft hat eigenen Kader, eigene Spiele, Farben und Logo. Wechsel über die Mannschafts-Leiste auf Startseite und im Kader. Personen lassen sich als Kopie aus einer anderen Mannschaft übernehmen (z. B. Jugend spielt bei den Damen mit), ihre Statistiken bleiben pro Mannschaft getrennt. Mannschaft löschen in den Einstellungen.
+- **Kategorie Damen, Herren, Mixed** pro Mannschaft, dazu optional Liga oder Altersklasse. Steuert vorerst die Anrede (Spielerin bzw. Spieler, Top-Scorerin bzw. Top-Scorer). Mixed nutzt „Spieler“.
+- **Vergleichswerte:** Die App bewertet nicht. Es gibt keine geprüften Referenzwerte für Damen-Mannschaften auf Regionalniveau. Mögliche spätere Lösung: eigene Vergleichswerte aus den eigenen Spielen derselben Mannschaft (offen, Momo entscheidet).
+
 ## Nächste Schritte
 
 1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.
