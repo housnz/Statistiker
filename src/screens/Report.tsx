@@ -7,6 +7,7 @@ import { PlayerStats, pctLabel, setSummary, statsByPlayer, teamStats } from '../
 import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
+import { ProReport } from './ProReport';
 
 const SEG = { att: '#23a55a', srv: '#8fdcaa', blk: '#14b8a6', opp: '#7d8aa0' };
 
@@ -124,6 +125,8 @@ export function Report({ matchId }: { matchId: number }) {
           {!rows.length && <p>Noch keine Aktionen erfasst.</p>}
         </section>
       </div>
+
+      {match.mode === 'profi' && <ProReport match={match} actions={actions} players={players} />}
 
       <section class="panel">
         <h2>Die Sätze in Zahlen</h2>

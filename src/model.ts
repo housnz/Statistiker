@@ -37,6 +37,11 @@ export type Mode = 'simpel' | 'profi';
 export interface SetInfo {
   nr: number;
   final: [number, number] | null; // eingetippter Endstand (wir, Gegner)
+  // Nur Profi:
+  lineup?: number[]; // Startaufstellung: 6 Personen, Index 0 = Position I (Aufschlag) bis Index 5 = Position VI
+  liberos?: number[]; // Libero(s) dieses Satzes
+  setterId?: number; // Zuspielerin, nach der die Läufer gezählt werden
+  firstServe?: 'us' | 'them'; // wer schlägt im Satz zuerst auf
 }
 
 export interface Match {
@@ -52,9 +57,10 @@ export interface Match {
   currentSet: number;
   finished: boolean;
   createdAt: number;
+  video?: { name: string; size: number }; // Profi: zuletzt verknüpftes Video (bleibt nur als Name gespeichert)
 }
 
-export type ElementKey = 'att' | 'srv' | 'rec' | 'set' | 'dig' | 'blk' | 'oth' | 'opp';
+export type ElementKey = 'att' | 'srv' | 'rec' | 'set' | 'dig' | 'blk' | 'oth' | 'opp' | 'sub';
 
 export interface Action {
   id?: number;
@@ -67,6 +73,8 @@ export interface Action {
   pos?: number; // Position auf dem Feld (Angriff 1 bis 6, Annahme 1, 5, 6)
   from?: number; // Profi: Startzone 1 bis 6
   to?: number; // Profi: Zielzone 1 bis 6 im gegnerischen Feld
+  vt?: number; // Profi: Videozeit in Sekunden
+  out?: number; // Wechsel: wer das Feld verlässt (playerId = wer reinkommt)
   ts: number;
 }
 
@@ -85,6 +93,7 @@ export interface ElementDef {
   label: string;
   short: string;
   profiOnly?: boolean;
+  internal?: boolean; // kein Eingabeknopf (z. B. Wechsel)
   needsPlayer: boolean;
   /** Welche Positionen abgefragt werden (Simpel und Profi). */
   positions?: number[];
@@ -165,7 +174,14 @@ export const ELEMENTS: ElementDef[] = [
       { key: 'P', label: 'Punkt Gegner (sonstiger)', effect: 'opppoint', tone: 'mid' },
     ],
   },
+  {
+    key: 'sub', label: 'Wechsel', short: 'W', needsPlayer: true, internal: true,
+    results: [{ key: 'IN', label: 'Wechsel', effect: 'none', tone: 'mid' }],
+  },
 ];
+
+/** Elemente, die beim Erfassen als Spalte bzw. Knopf erscheinen. */
+export const INPUT_ELEMENTS = ELEMENTS.filter((e) => e.key !== 'opp' && !e.internal);
 
 export const EL: Record<ElementKey, ElementDef> = Object.fromEntries(
   ELEMENTS.map((e) => [e.key, e]),
@@ -199,6 +215,7 @@ export function playerLabel(p: Player | undefined): string {
 export function describeAction(a: Action, p?: Player): string {
   const el = EL[a.element];
   const r = resultDef(a);
+  if (a.element === 'sub') return `Wechsel: ${playerLabel(p)} kommt rein`;
   const parts = a.element === 'opp' ? [r?.label ?? a.result] : [el?.label ?? a.element, r?.label ?? a.result];
   if (a.pos) parts.push(`Pos. ${a.pos}`);
   if (a.from) parts.push(`von ${a.from}`);

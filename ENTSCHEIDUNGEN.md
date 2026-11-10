@@ -24,9 +24,18 @@ Stand 9. November 2026, erster Prototyp.
 - **Design** (10.11.2026, Momos Wahl aus zwei Vorschlägen): Vorschlag B „Klemmbrett“ für die ganze App (hell, Rot und Schwarz wie das Logo, Schriften IBM Plex). Erfassen als Bogen wie auf Papier: Zeilen = Personen, Spalten = Elemente, ein Tipp auf die Zelle wählt beides. Zeichen im Bogen wie auf dem Papier (Positionsziffer, # Ass oder Blockpunkt, 0 gut, − ok, / schlecht, = Fehler), farbig nach Ergebnis, Punkte unterstrichen. Gegnerknöpfe speichern sofort. Verlauf zum Korrigieren über den Knopf „Verlauf“. Auswertung im Stil von Vorschlag A „Anzeigetafel“ (immer dunkel, große schmale Zahlen). Schriften sind in die App eingebaut, kein Abruf bei Google.
 - **Standardfarben** neuer Mannschaften: Rot #d7262e und Schwarz #16181d. Mannschaften mit den alten Standardfarben (Blau, Gelb) wurden automatisch umgestellt, selbst gewählte Farben bleiben.
 
+- **Profi-Modus neu** (10.11.2026, Momo): für die Videoanalyse eigener Spiele, wie DataVolley oder Click&Scout. Simpel bleibt für Live-Erfassung allein im unteren Ligabetrieb. Damit sind Rotation, Sideout, Break und Läufer jetzt doch enthalten, aber nur im Profi-Modus.
+  - Jeder Ballwechsel komplett, nur eigenes Team. Vom Gegner nur das Ende des Ballwechsels (Gegner punktet, Gegnerfehler, Aufschlagfehler).
+  - Ein Ballwechsel endet mit jeder Aktion, die einen Punkt entscheidet. Rotation, Aufschlagrecht und Spielstand werden daraus abgeleitet.
+  - Pro Satz Startaufstellung (Position I bis VI), Libero, Zuspielerin für die Läufer und wer zuerst aufschlägt. Automatische Rotation bei Sideout. Wechsel über einen eigenen Knopf. Libero wird direkt angetippt, Libero-Wechsel muss man nicht eintragen.
+  - Läufer = Position der Zuspielerin (1 bis 6).
+  - Bei eigenem Aufschlag ist die Aufschlägerin vorgewählt. Diese Vorwahl zählt nicht als Schritt.
+  - Video läuft in der App. Die Datei bleibt auf dem Gerät und wird nur im Speicher geöffnet. Gespeichert werden der Dateiname und pro Aktion die Videozeit. Szenen starten 3 Sekunden vorher.
+  - Profi-Auswertung: Sideout, Break, First-Ball-Sideout, Sideout und Break pro Läufer, Angriff nach Annahme oder im Konter, Verteilung nach guter oder schwacher Annahme, Zielzonen für Angriff und Aufschlag, Zuspiel pro Zuspielerin, Abwehr pro Person, Videoszenen mit Filter.
+
 ## Nächste Schritte
 
 1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.
-2. PDF-Report im Layout der bisherigen Auswertungen.
+2. PDF-Report im Layout der bisherigen Auswertungen (inklusive Profi-Teil).
 3. Excel-Export.
 4. Bogen nachtragen (digitale Bogen-Ansicht zum Abtippen).

@@ -56,7 +56,7 @@ export function NewMatch() {
               <button class={mode === 'profi' ? 'on' : ''} onClick={() => setMode('profi')}>Profi</button>
             </div>
             <span class="small muted">
-              {mode === 'simpel' ? `Wie der Papierbogen: ${words().one}, Element, Ergebnis, Position.` : 'Zusätzlich Start- und Zielzone, Zuspiel und Abwehr.'}
+              {mode === 'simpel' ? `Wie der Papierbogen: ${words().one}, Element, Ergebnis, Position.` : 'Für die Videoanalyse: jeder Ballwechsel, Aufstellung und Läufer, Zielzonen, Zuspiel, Abwehr, Video.'}
             </span>
           </div>
         </div>

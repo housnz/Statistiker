@@ -1,7 +1,7 @@
 import { useRef } from 'preact/hooks';
 import { db, downloadFile, exportBackup, importBackup } from '../db';
 import { createDemoTeam } from '../demo';
-import { ELEMENTS, Kategorie, Team } from '../model';
+import { ElementKey, INPUT_ELEMENTS, Kategorie, Team } from '../model';
 import { prefs, savePrefs } from '../prefs';
 import { applyTeamColors, ask, deleteTeam, go, reloadTeam, switchTeam, team, toast, todayIso, useLive } from '../state';
 import { KategorieSeg } from './Teams';
@@ -77,7 +77,7 @@ export function Settings() {
     go({ name: 'home' });
   };
 
-  const toggleEl = (k: (typeof ELEMENTS)[number]['key']) => {
+  const toggleEl = (k: ElementKey) => {
     const hidden = p.hidden.includes(k) ? p.hidden.filter((x) => x !== k) : [...p.hidden, k];
     savePrefs({ hidden });
   };
@@ -139,7 +139,7 @@ export function Settings() {
           <div class="field">
             <span class="small muted" style={{ fontWeight: 600 }}>Sichtbare Elemente beim Erfassen</span>
             <div class="row">
-              {ELEMENTS.filter((e) => e.key !== 'opp').map((e) => (
+              {INPUT_ELEMENTS.map((e) => (
                 <button class={`chip ${p.hidden.includes(e.key) ? '' : 'on'}`} onClick={() => toggleEl(e.key)}>
                   {e.label}{e.profiOnly ? ' (Profi)' : ''}
                 </button>

@@ -1,72 +1,15 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { db } from '../db';
 import {
-  Action, EL, ELEMENTS, ElementKey, Match, Player, describeAction, distribution, effectOf, liveScore,
+  Action, EL, INPUT_ELEMENTS, ElementKey, Match, Player, describeAction, distribution, effectOf, liveScore,
 } from '../model';
 import { prefs } from '../prefs';
 import { setSummary } from '../stats';
 import { go, team, toast, useLive, words } from '../state';
 import { Logo } from '../logo';
-
-interface Draft {
-  editId?: number;
-  playerId: number | 'opp' | null;
-  element: ElementKey | null;
-  result: string | null;
-  pos?: number;
-  to?: number;
-  noZone?: boolean; // Profi: Zielzone bewusst weggelassen
-  dirty?: boolean; // beim Korrigieren: erst speichern, wenn etwas geändert wurde
-  steps?: Step[]; // Reihenfolge der Eingaben, für "Rückgängig" in kleinen Schritten
-}
-
-type Step = 'player' | 'element' | 'result' | 'pos' | 'to' | 'noZone';
-
-const EMPTY: Draft = { playerId: null, element: null, result: null, steps: [] };
-
-/** Schritt ans Ende der Liste setzen (doppelte vorher entfernen). */
-function push(steps: Step[] | undefined, k: Step, drop: Step[] = []): Step[] {
-  return [...(steps ?? []).filter((x) => x !== k && !drop.includes(x)), k];
-}
-
-/** Gespeicherte Aktion wieder in eine Eingabe verwandeln (mit allen Schritten). */
-function draftFrom(a: Action, profi: boolean, editId?: number): Draft {
-  const steps: Step[] = ['player'];
-  if (a.playerId != null) steps.push('element');
-  steps.push('result');
-  if (a.pos != null) steps.push('pos');
-  if (a.to != null) steps.push('to');
-  const noZone = profi && a.to == null && !!EL[a.element]?.zones?.to && !(a.element === 'srv' && a.result === 'E');
-  if (noZone) steps.push('noZone');
-  return { editId, playerId: a.playerId ?? 'opp', element: a.element, result: a.result, pos: a.pos, to: a.to, noZone, steps };
-}
-
-/** Letzte Eingabe zurücknehmen. */
-function stepBack(d: Draft): Draft {
-  const steps = [...(d.steps ?? [])];
-  const last = steps.pop();
-  const n: Draft = { ...d, steps, dirty: true };
-  if (last === 'player') {
-    if (d.playerId === 'opp') n.element = null, n.result = null;
-    n.playerId = null;
-  } else if (last === 'element') {
-    n.element = null; n.result = null; n.pos = undefined; n.to = undefined; n.noZone = false;
-  } else if (last === 'result') n.result = null;
-  else if (last === 'pos') n.pos = undefined;
-  else if (last === 'to') n.to = undefined;
-  else if (last === 'noZone') n.noZone = false;
-  return n;
-}
+import { Draft, EMPTY, SHORT, Step, draftFrom, needs, push, stepBack, token } from '../draft';
 
 export const DIST_COLORS = { p4: '#3b82f6', p3: '#14b8a6', p2: '#a855f7', back: '#f97316' };
-
-/** Was für diese Aktion noch fehlt. */
-function needs(d: Draft, profi: boolean) {
-  const el = d.element ? EL[d.element] : null;
-  const pos = !!el?.positions && d.pos == null;
-  const to = profi && !!el?.zones?.to && d.to == null && !d.noZone && d.result != null && !(d.element === 'srv' && d.result === 'E');
-  return { pos, to };
-}
 
 export function Scout({ matchId }: { matchId: number }) {
   const match = useLive(() => db.matches.get(matchId), [matchId], undefined as Match | undefined);
@@ -96,7 +39,7 @@ export function Scout({ matchId }: { matchId: number }) {
   const score = liveScore(setActions);
   const pmap = useMemo(() => new Map(players.map((p) => [p.id!, p])), [players]);
 
-  const visible = ELEMENTS.filter((e) => e.key !== 'opp' && (!e.profiOnly || profi) && !prefs.value.hidden.includes(e.key));
+  const visible = INPUT_ELEMENTS.filter((e) => (!e.profiOnly || profi) && !prefs.value.hidden.includes(e.key));
 
   // Speichern, sobald alles Nötige gewählt ist.
   useEffect(() => {
@@ -387,25 +330,6 @@ export function Scout({ matchId }: { matchId: number }) {
   );
 }
 
-const SHORT: Partial<Record<ElementKey, string>> = { srv: 'Aufschl.', oth: 'Sonst.', rec: 'Annahme' };
-
-const SYM: Record<string, Record<string, string>> = {
-  srv: { A: '#', G: '0', O: '−', S: '/', E: '=' },
-  blk: { K: '#', T: '+', E: '!' },
-  oth: { E: '=' },
-  set: { G: '#', L: '+', N: '−', E: '=' },
-  dig: { G: '#', O: '+', E: '=' },
-};
-
-/** Zeichen im Bogen: wie auf dem Papier (Positionsziffer bzw. Symbol), Farbe nach Ergebnis. */
-function token(a: Action): { t: string; cls: string } {
-  const r = EL[a.element].results.find((x) => x.key === a.result);
-  const tone = r?.tone ?? 'mid';
-  const cls = tone + (r?.effect === 'point' ? ' pt' : '');
-  if (a.element === 'att' || a.element === 'rec') return { t: a.pos != null ? String(a.pos) : '·', cls };
-  return { t: SYM[a.element]?.[a.result] ?? '·', cls };
-}
-
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div class="stepper">
@@ -416,7 +340,7 @@ function Stepper({ value, onChange }: { value: number; onChange: (v: number) => 
   );
 }
 
-function EndSetDialog({ match, setActions, onClose }: { match: Match; setActions: Action[]; onClose: () => void }) {
+export function EndSetDialog({ match, setActions, onClose }: { match: Match; setActions: Action[]; onClose: () => void }) {
   const nr = match.currentSet;
   const existing = match.sets.find((s) => s.nr === nr)?.final;
   const live = liveScore(setActions);

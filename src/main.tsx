@@ -12,6 +12,16 @@ import { Scout } from './screens/Scout';
 import { Report } from './screens/Report';
 import { Settings } from './screens/Settings';
 import { AskDialog } from './AskDialog';
+import { ProScout } from './screens/ProScout';
+import { db } from './db';
+import { useLive } from './state';
+
+/** Simpel und Profi haben eigene Bildschirme. */
+function ScoutRoute({ matchId }: { matchId: number }) {
+  const mode = useLive(async () => (await db.matches.get(matchId))?.mode ?? null, [matchId], null as string | null);
+  if (mode == null) return null;
+  return mode === 'profi' ? <ProScout matchId={matchId} /> : <Scout matchId={matchId} />;
+}
 
 function App() {
   const p = prefs.value;
@@ -27,7 +37,7 @@ function App() {
       {r.name === 'home' && <Home />}
       {r.name === 'roster' && <Roster />}
       {r.name === 'newMatch' && <NewMatch />}
-      {r.name === 'scout' && <Scout matchId={r.matchId} />}
+      {r.name === 'scout' && <ScoutRoute matchId={r.matchId} />}
       {r.name === 'report' && <Report matchId={r.matchId} />}
       {r.name === 'settings' && <Settings />}
       <AskDialog />
