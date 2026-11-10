@@ -17,9 +17,46 @@ interface Draft {
   to?: number;
   noZone?: boolean; // Profi: Zielzone bewusst weggelassen
   dirty?: boolean; // beim Korrigieren: erst speichern, wenn etwas geändert wurde
+  steps?: Step[]; // Reihenfolge der Eingaben, für "Rückgängig" in kleinen Schritten
 }
 
-const EMPTY: Draft = { playerId: null, element: null, result: null };
+type Step = 'player' | 'element' | 'result' | 'pos' | 'to' | 'noZone';
+
+const EMPTY: Draft = { playerId: null, element: null, result: null, steps: [] };
+
+/** Schritt ans Ende der Liste setzen (doppelte vorher entfernen). */
+function push(steps: Step[] | undefined, k: Step, drop: Step[] = []): Step[] {
+  return [...(steps ?? []).filter((x) => x !== k && !drop.includes(x)), k];
+}
+
+/** Gespeicherte Aktion wieder in eine Eingabe verwandeln (mit allen Schritten). */
+function draftFrom(a: Action, profi: boolean, editId?: number): Draft {
+  const steps: Step[] = ['player'];
+  if (a.playerId != null) steps.push('element');
+  steps.push('result');
+  if (a.pos != null) steps.push('pos');
+  if (a.to != null) steps.push('to');
+  const noZone = profi && a.to == null && !!EL[a.element]?.zones?.to && !(a.element === 'srv' && a.result === 'E');
+  if (noZone) steps.push('noZone');
+  return { editId, playerId: a.playerId ?? 'opp', element: a.element, result: a.result, pos: a.pos, to: a.to, noZone, steps };
+}
+
+/** Letzte Eingabe zurücknehmen. */
+function stepBack(d: Draft): Draft {
+  const steps = [...(d.steps ?? [])];
+  const last = steps.pop();
+  const n: Draft = { ...d, steps, dirty: true };
+  if (last === 'player') {
+    if (d.playerId === 'opp') n.element = null, n.result = null;
+    n.playerId = null;
+  } else if (last === 'element') {
+    n.element = null; n.result = null; n.pos = undefined; n.to = undefined; n.noZone = false;
+  } else if (last === 'result') n.result = null;
+  else if (last === 'pos') n.pos = undefined;
+  else if (last === 'to') n.to = undefined;
+  else if (last === 'noZone') n.noZone = false;
+  return n;
+}
 
 export const DIST_COLORS = { p4: '#2563eb', p3: '#0d9488', p2: '#9333ea', back: '#ea580c' };
 
@@ -86,26 +123,39 @@ export function Scout({ matchId }: { matchId: number }) {
   }
 
   const pickPlayer = (id: number | 'opp') => {
-    if (id === 'opp') setD({ ...d, dirty: true, playerId: 'opp', element: 'opp', result: null, pos: undefined, to: undefined });
-    else setD({ ...d, dirty: true, playerId: id, element: d.element === 'opp' ? null : d.element });
+    if (id === 'opp') setD({ ...d, dirty: true, playerId: 'opp', element: 'opp', result: null, pos: undefined, to: undefined, noZone: false, steps: ['player'] });
+    else if (d.element === 'opp') setD({ ...d, dirty: true, playerId: id, element: null, result: null, steps: ['player'] });
+    else setD({ ...d, dirty: true, playerId: id, steps: push(d.steps, 'player') });
   };
   const pickElement = (k: ElementKey) => {
-    if (d.playerId === 'opp') setD({ ...d, dirty: true, playerId: null, element: k, result: null, pos: undefined, to: undefined });
-    else setD({ ...d, dirty: true, element: k, result: null, pos: undefined, to: undefined, noZone: false });
+    const drop: Step[] = ['result', 'pos', 'to', 'noZone'];
+    if (d.playerId === 'opp') setD({ ...d, dirty: true, playerId: null, element: k, result: null, pos: undefined, to: undefined, noZone: false, steps: ['element'] });
+    else setD({ ...d, dirty: true, element: k, result: null, pos: undefined, to: undefined, noZone: false, steps: push(d.steps, 'element', drop) });
   };
-  const pickResult = (r: string) => setD({ ...d, dirty: true, result: r });
+  const pickResult = (r: string) => setD({ ...d, dirty: true, result: r, steps: push(d.steps, 'result') });
+  const pickPos = (z: number) => setD({ ...d, dirty: true, pos: z, steps: push(d.steps, 'pos') });
+  const pickTo = (z: number) => setD({ ...d, dirty: true, to: z, noZone: false, steps: push(d.steps, 'to', ['noZone']) });
+  const pickNoZone = () => setD({ ...d, dirty: true, noZone: true, to: undefined, steps: push(d.steps, 'noZone', ['to']) });
 
+  const draftEmpty = !d.steps?.length && d.playerId == null && !d.element;
+
+  /** Rückgängig in kleinen Schritten: erst die laufende Eingabe Schritt für Schritt,
+   *  dann die zuletzt gespeicherte Aktion zurückholen (ohne ihren letzten Schritt). */
   const undo = async () => {
+    if (!draftEmpty) {
+      const n = stepBack(d);
+      const empty = !n.steps?.length;
+      setD(empty ? EMPTY : n);
+      return;
+    }
     const last = setActions[setActions.length - 1];
     if (!last) return;
     await db.actions.delete(last.id!);
-    toast(`Rückgängig: ${describeAction(last, pmap.get(last.playerId!))}`);
-    setD(EMPTY);
+    setD(stepBack(draftFrom(last, profi)));
+    toast(`Zurückgeholt: ${describeAction(last, pmap.get(last.playerId!))}`);
   };
 
-  const startEdit = (a: Action) => {
-    setD({ editId: a.id, playerId: a.playerId ?? 'opp', element: a.element, result: a.result, pos: a.pos, to: a.to, noZone: profi && a.to == null });
-  };
+  const startEdit = (a: Action) => setD(draftFrom(a, profi, a.id));
   const deleteEdit = async () => {
     if (d.editId == null) return;
     await db.actions.delete(d.editId);
@@ -150,7 +200,7 @@ export function Scout({ matchId }: { matchId: number }) {
             ))}
           </div>
         </div>
-        <button class="btn" onClick={undo} disabled={!setActions.length}>↶ Rückgängig</button>
+        <button class="btn" onClick={undo} disabled={draftEmpty && !setActions.length} title="Einen Schritt zurück">↶ Schritt zurück</button>
         <button class="btn accent" onClick={() => setEndDialog(true)}>Satz beenden</button>
       </div>
 
@@ -197,7 +247,7 @@ export function Scout({ matchId }: { matchId: number }) {
             <div class="pending" style={{ marginTop: 8 }}>
               <span class="muted small">{hint === pick && !d.element ? '' : hint}</span>
               <span style={{ flex: 1 }} />
-              {(n.to) && <button class="btn" onClick={() => setD({ ...d, dirty: true, noZone: true })}>ohne Zone</button>}
+              {(n.to) && <button class="btn" onClick={pickNoZone}>ohne Zone</button>}
               {d.editId != null && <button class="btn danger" onClick={deleteEdit}>Löschen</button>}
               {(d.playerId != null || d.element) && <button class="btn ghost" onClick={() => setD(EMPTY)}>Abbrechen</button>}
             </div>
@@ -229,12 +279,12 @@ export function Scout({ matchId }: { matchId: number }) {
             <Court
               ownZones={ownZones}
               ownValue={d.pos}
-              onOwn={(z) => setD({ ...d, dirty: true, pos: z })}
+              onOwn={pickPos}
               askOwn={n.pos && !!d.result}
               showOpp={profi}
               oppActive={oppActive}
               oppValue={d.to}
-              onOpp={(z) => setD({ ...d, dirty: true, to: z, noZone: false })}
+              onOpp={pickTo}
               askOpp={n.to && !n.pos}
             />
           </div>

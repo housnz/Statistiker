@@ -9,6 +9,7 @@ Stand 9. November 2026, erster Prototyp.
 - **Spielstand live:** eigene Punkte = Angriffspunkt, Ass, Blockpunkt, Gegner-Aufschlagfehler, Gegnerfehler. Gegnerpunkte = alle eigenen Fehler (inkl. geblockt) plus optional „Punkt Gegner (sonstiger)“.
 - **Zusatzknopf „Punkt Gegner (sonstiger)“** beim Gegner: freiwillig, damit der Spielstand in der App mitläuft. Zählt nicht als eigener Fehler.
 - **Satzende-Prüfung:** wie in den PDFs. Eigene Punkte laut Endstand minus erfasste eigene Punkte = „nicht notiert“.
+- **Schritt zurück** (10.11.2026, Wunsch von Momo): nimmt immer nur die letzte Eingabe zurück. Bei laufender Eingabe die zuletzt getippte Angabe (Zone, Ergebnis, Element, Person). Ist nichts angefangen, holt der Knopf die zuletzt gespeicherte Aktion zurück, ohne ihre letzte Angabe. Beispiel: falsche Angriffszone, einmal zurück, richtige Zone tippen. „Abbrechen“ verwirft die zurückgeholte Aktion ganz.
 - **Korrektur:** Eintrag im Verlauf antippen, neu wählen, wird ersetzt. Oder löschen.
 - **Rückfragen** als eigene Dialoge in der App (keine Browser-Popups).
 - **Demo-Daten** nur mit erfundenen Namen. Die echten Testdaten (Minderjährige) kommen nicht ins öffentliche Repository (`testdaten/` steht in `.gitignore`).
