@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { db, saveBackupFile } from '../db';
 import { Logo } from '../logo';
-import { fmtDate, go, switchTeam, team, useLive, words } from '../state';
+import { ask, fmtDate, go, switchTeam, team, toast, useLive, words } from '../state';
 import { NewTeamDialog } from './Teams';
 import type { Match, Team } from '../model';
 
@@ -34,6 +34,19 @@ export function Home() {
   const playerCount = teams.find((x) => x.team.id === t?.id)?.count ?? 0;
   const running = matches.find((m) => !m.finished);
 
+  const removeMatch = async (m: Match) => {
+    const n = await db.actions.where('matchId').equals(m.id!).count();
+    const ok = await ask(
+      `Spiel gegen ${m.opponent} vom ${fmtDate(m.date)} löschen? Dabei ${n === 1 ? 'wird 1 erfasste Aktion' : `werden ${n} erfasste Aktionen`} gelöscht. Das lässt sich nicht rückgängig machen.`,
+      'Endgültig löschen',
+    );
+    if (!ok) return;
+    await db.transaction('rw', db.matches, db.actions, async () => {
+      await db.actions.where('matchId').equals(m.id!).delete();
+      await db.matches.delete(m.id!);
+    });
+    toast('Spiel gelöscht');
+  };
   const backup = async () => {
     await saveBackupFile();
   };
@@ -110,6 +123,7 @@ export function Home() {
                     <span class="acts">
                       {!m.finished && <button class="btn primary" onClick={() => go({ name: 'scout', matchId: m.id! })}>Erfassen</button>}
                       <button class="btn" onClick={() => go({ name: 'report', matchId: m.id! })}>Auswertung</button>
+                      <button class="btn danger del" data-del={m.opponent} aria-label={`Spiel gegen ${m.opponent} löschen`} title="Spiel löschen" onClick={() => removeMatch(m)}>✕</button>
                     </span>
                   </div>
                 );

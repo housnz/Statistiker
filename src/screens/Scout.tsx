@@ -32,6 +32,7 @@ export function Scout({ matchId }: { matchId: number }) {
   const [endDialog, setEndDialog] = useState(false);
   const [distScope, setDistScope] = useState<'set' | 'match'>('set');
   const [histOpen, setHistOpen] = useState(false);
+  const [sortMode, setSortMode] = useState(false);
 
   const setNr = match?.currentSet ?? 1;
   const profi = match?.mode === 'profi';
@@ -138,6 +139,12 @@ export function Scout({ matchId }: { matchId: number }) {
   const oppCount = (k: string) => setActions.filter((a) => a.element === 'opp' && a.result === k).length;
   const picked = d.playerId === 'opp' ? null : d.playerId != null ? pmap.get(d.playerId) : undefined;
 
+  // Wer spielt, steht im Bogen oben. Der Rest (Bank) darunter.
+  const court = match.court ?? [];
+  const onTop = players.filter((p) => court.includes(p.id!));
+  const sheetRows = [...onTop, ...players.filter((p) => !court.includes(p.id!))];
+  const toggleCourt = (id: number) => db.matches.update(matchId, { court: court.includes(id) ? court.filter((x) => x !== id) : [...court, id] });
+
   return (
     <div class="scout">
       <div class="bar">
@@ -170,23 +177,28 @@ export function Scout({ matchId }: { matchId: number }) {
         <section class="sheet">
           <div class="row" style={{ justifyContent: 'space-between' }}>
             <h2>Bogen Satz {setNr}</h2>
-            <span class="small muted">Zelle antippen: {W.one} und Element in einem Schritt</span>
+            <span class="row" style={{ gap: 12 }}>
+              <span class="small muted">{sortMode ? `Namen antippen: wer spielt, steht oben (${onTop.length} gewählt)` : `Zelle antippen: ${W.one} und Element in einem Schritt`}</span>
+              <button class={`btn ${sortMode ? 'primary' : ''}`} data-testid="sort" onClick={() => { setSortMode(!sortMode); setD(EMPTY); }}>{sortMode ? 'Fertig' : 'Wer spielt?'}</button>
+            </span>
           </div>
           <div class="mx-wrap">
             <div class="mx" style={{ gridTemplateColumns: gridCols }}>
               <div class="h">{W.one}</div>
               {visible.map((e) => <div class="h">{cols > 5 ? SHORT[e.key] ?? e.label : e.label}</div>)}
-              {players.map((p) => (
+              {sheetRows.map((p, i) => (
                 <>
-                  <button class={`nm ${d.playerId === p.id ? 'on' : ''}`} data-player={p.name} onClick={() => pickPlayer(p.id!)}>
+                  {i === onTop.length && i > 0 && <div class="sep">Bank</div>}
+                  <button class={`nm ${d.playerId === p.id ? 'on' : ''} ${sortMode && court.includes(p.id!) ? 'play' : ''}`} data-player={p.name} onClick={() => (sortMode ? toggleCourt(p.id!) : pickPlayer(p.id!))}>
                     <span class="nr">{p.number ?? '·'}</span>
                     <span class="na">{p.name}</span>
+                    {sortMode && <span class="mark">{court.includes(p.id!) ? '▲ spielt' : 'Bank'}</span>}
                   </button>
                   {visible.map((e) => {
                     const on = d.playerId === p.id && d.element === e.key;
                     const toks = setActions.filter((a) => a.playerId === p.id && a.element === e.key);
                     return (
-                      <button class={`cell ${on ? 'on' : ''}`} data-cell={`${p.name}:${e.key}`} aria-label={`${p.name}, ${e.label}`} onClick={() => pickCell(p.id!, e.key)}>
+                      <button class={`cell ${on ? 'on' : ''}`} data-cell={`${p.name}:${e.key}`} aria-label={`${p.name}, ${e.label}`} disabled={sortMode} onClick={() => pickCell(p.id!, e.key)}>
                         {toks.map((a) => {
                           const tk = token(a);
                           return <span class={`tok ${tk.cls}`}>{tk.t}</span>;

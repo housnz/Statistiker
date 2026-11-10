@@ -39,6 +39,8 @@ Stand 9. November 2026, erster Prototyp.
 
 - **Abwehr** (10.11.2026, Momo): zwei Arten verlorener Bälle. „Fehler (vermeidbar)“ (Ballkontrolle, Absprache) zählt als eigener Fehler und senkt die Bilanz. „Gegner punktet (unhaltbar)“ ist ein gut erzielter Gegnerpunkt: Punkt für den Gegner, kein eigener Fehler, zählt bei „vom Gegner erspielt“. Zeichen im Bogen: = und ×.
 - **Texte und Vorzeichen** (10.11.2026): Einzahl wird ausgeschrieben („1 Punkt aus 1 Angriff“, „1 Ass“). Negative Werte stehen in App und PDF überall mit dem echten Minuszeichen (−). In Excel bleiben es Zahlen. Die Kachel „Eigene Fehler“ nennt im Profi-Spiel auch Zuspiel und Abwehr.
+- **Bogen: wer spielt, steht oben** (10.11.2026, Wunsch von Momo): Im Simpel-Bogen öffnet der Knopf „Wer spielt?“ eine Auswahl. Namen antippen, die Gewählten stehen oben, der Rest unter der Trennzeile „Bank“. Bewusst Antippen statt Ziehen, das geht am iPad schneller und sicherer. Die Auswahl gilt für das ganze Spiel und bleibt gespeichert (`court` am Spiel). Im Profi-Modus sortiert der Bogen-Reiter von selbst nach der Aufstellung (Feld und Libero oben).
+- **Spiel löschen** (10.11.2026, Wunsch von Momo): In der Spieleliste auf der Startseite hat jedes Spiel einen Knopf ✕. Nach einer Rückfrage werden das Spiel und alle seine Aktionen gelöscht. Nicht rückgängig zu machen, deshalb vorher Sicherung.
 - **Veröffentlichung:** GitHub Pages über GitHub Actions (`.github/workflows/pages.yml`), baut bei jeder Änderung auf `main` neu.
 
 ## Nächste Schritte

@@ -57,6 +57,7 @@ export interface Match {
   currentSet: number;
   finished: boolean;
   createdAt: number;
+  court?: number[]; // Bogen: wer gerade spielt, steht oben (von Hand gewählt)
   video?: { name: string; size: number }; // Profi: zuletzt verknüpftes Video (bleibt nur als Name gespeichert)
 }
 

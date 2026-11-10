@@ -126,6 +126,8 @@ export function ProScout({ matchId }: { matchId: number }) {
   const liberos = (setInfo?.liberos ?? []).map((id) => pmap.get(id)).filter(Boolean) as Player[];
   const bench = players.filter((p) => !cur.slots.includes(p.id!) && !setInfo?.liberos?.includes(p.id!));
   const picked = d.playerId === 'opp' ? null : d.playerId != null ? pmap.get(d.playerId) : undefined;
+  // Bogen: wer auf dem Feld steht (und die Libero), steht oben.
+  const onSheetTop = players.filter((p) => cur.slots.includes(p.id!) || setInfo?.liberos?.includes(p.id!));
 
   let hint = `${W.one} auf dem Feld antippen`;
   if (picked && !d.element) hint = 'Element wählen';
@@ -189,7 +191,7 @@ export function ProScout({ matchId }: { matchId: number }) {
                 if (match.video?.name !== name) db.matches.update(matchId, { video: { name, size } });
               }} />
             ) : (
-              <MiniSheet players={players} actions={setActions} visible={visible.map((e) => e.key)} />
+              <MiniSheet players={[...onSheetTop, ...players.filter((p) => !onSheetTop.includes(p))]} top={onSheetTop.length} actions={setActions} visible={visible.map((e) => e.key)} />
             )}
           </div>
 
@@ -320,14 +322,15 @@ export function ProScout({ matchId }: { matchId: number }) {
 }
 
 /** Bogen-Übersicht im Profi-Modus (nur ansehen, Eingabe läuft über das Feld rechts). */
-function MiniSheet({ players, actions, visible }: { players: Player[]; actions: Action[]; visible: ElementKey[] }) {
+function MiniSheet({ players, top, actions, visible }: { players: Player[]; top: number; actions: Action[]; visible: ElementKey[] }) {
   return (
     <div class="mx-wrap">
       <div class="mx" style={{ gridTemplateColumns: `130px repeat(${visible.length}, minmax(0, 1fr))` }}>
         <div class="h">Name</div>
         {visible.map((k) => <div class="h">{SHORT[k] ?? EL[k].label}</div>)}
-        {players.map((p) => (
+        {players.map((p, i) => (
           <>
+            {i === top && i > 0 && <div class="sep">Bank</div>}
             <div class="nm"><span class="nr">{p.number ?? '·'}</span><span class="na">{p.name}</span></div>
             {visible.map((k) => (
               <div class="cell">

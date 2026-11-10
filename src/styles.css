@@ -154,11 +154,12 @@ table.data th.grp { text-align: center; border-bottom: 1px solid var(--ink); }
 .htile.new .sub { color: #fff; opacity: .9; }
 .htile:disabled { opacity: .5; }
 .mlist { flex: 1; }
-.mhead, .mrow { display: grid; grid-template-columns: 96px minmax(0, 1.3fr) 76px minmax(0, 1.6fr) 60px 236px; align-items: center; gap: 8px; }
+.mhead, .mrow { display: grid; grid-template-columns: 96px minmax(0, 1.6fr) 76px minmax(0, 1.2fr) 60px 290px; align-items: center; gap: 8px; }
 .mhead { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); font-size: 12px; font-weight: 700; letter-spacing: .08em; padding: 8px 4px; }
 .mrow { padding: 10px 4px; border-bottom: 1px solid var(--rule); font-size: 15px; }
 .mrow .res { font: 700 20px var(--f-num); }
 .mrow .acts { display: flex; gap: 6px; justify-content: flex-end; }
+.mrow .acts .del { padding: 0; width: 46px; flex: none; font-size: 18px; }
 .badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--brand); color: #fff; }
 
 /* ---------- Mannschafts-Leiste (Kader) ---------- */
@@ -199,6 +200,11 @@ table.data th.grp { text-align: center; border-bottom: 1px solid var(--ink); }
 .mx .nm { gap: 8px; padding: 4px 8px; }
 .mx .nm .nr { font: 700 18px var(--f-num); color: var(--brand); width: 28px; flex: none; }
 .mx .nm .na { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mx > .sep { grid-column: 1 / -1; padding: 3px 8px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--paper2); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); }
+.mx .nm .mark { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.mx .nm.play { background: color-mix(in srgb, var(--brand) 10%, var(--paper)); }
+.mx .nm.play .mark { color: var(--brand); }
+.mx .cell:disabled { opacity: .45; }
 .mx .nm.on { background: color-mix(in srgb, var(--brand) 10%, var(--paper)); }
 .mx .cell { border-left: 1px solid var(--rule); flex-wrap: wrap; gap: 2px 8px; padding: 4px 10px; align-content: center; }
 .mx .cell.on { background: color-mix(in srgb, var(--brand) 8%, var(--paper)); box-shadow: inset 0 0 0 3px var(--brand); }
