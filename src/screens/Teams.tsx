@@ -10,7 +10,7 @@ export function TeamBar() {
   const cur = team.value;
   return (
     <div class="teambar" data-testid="teambar">
-      <span class="small muted" style={{ fontWeight: 700 }}>Mannschaft</span>
+      <span class="label">Mannschaft</span>
       {teams.map((x) => (
         <button class={`chip ${x.id === cur?.id ? 'on' : ''}`} onClick={() => switchTeam(x.id!)}>
           {x.name}
@@ -33,7 +33,7 @@ export function KategorieSeg({ value, onChange }: { value: Kategorie; onChange: 
   );
 }
 
-function NewTeamDialog({ onClose }: { onClose: () => void }) {
+export function NewTeamDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [kat, setKat] = useState<Kategorie>('damen');
   const [liga, setLiga] = useState('');

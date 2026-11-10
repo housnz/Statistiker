@@ -48,7 +48,7 @@ export function Roster() {
       <div style={{ marginBottom: 16, marginTop: -6 }}><TeamBar /></div>
       <div class="card">
         <p class="muted small" style={{ marginTop: 0 }}>
-          Einmal anlegen, pro Spiel nur auswählen, wer dabei ist. Die Reihenfolge hier ist auch die Reihenfolge der Knöpfe beim Erfassen.
+          Einmal anlegen, pro Spiel nur auswählen, wer dabei ist. Die Reihenfolge hier ist auch die Reihenfolge der Zeilen im Bogen beim Erfassen.
         </p>
         <div class="list-edit">
           <div class="prow small muted" style={{ fontWeight: 700 }}>

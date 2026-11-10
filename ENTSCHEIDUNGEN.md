@@ -21,6 +21,9 @@ Stand 9. November 2026, erster Prototyp.
 - **Kategorie Damen, Herren, Mixed** pro Mannschaft, dazu optional Liga oder Altersklasse. Steuert vorerst die Anrede (Spielerin bzw. Spieler, Top-Scorerin bzw. Top-Scorer). Mixed nutzt „Spieler“.
 - **Vergleichswerte:** Die App bewertet nicht. Es gibt keine geprüften Referenzwerte für Damen-Mannschaften auf Regionalniveau. Mögliche spätere Lösung: eigene Vergleichswerte aus den eigenen Spielen derselben Mannschaft (offen, Momo entscheidet).
 
+- **Design** (10.11.2026, Momos Wahl aus zwei Vorschlägen): Vorschlag B „Klemmbrett“ für die ganze App (hell, Rot und Schwarz wie das Logo, Schriften IBM Plex). Erfassen als Bogen wie auf Papier: Zeilen = Personen, Spalten = Elemente, ein Tipp auf die Zelle wählt beides. Zeichen im Bogen wie auf dem Papier (Positionsziffer, # Ass oder Blockpunkt, 0 gut, − ok, / schlecht, = Fehler), farbig nach Ergebnis, Punkte unterstrichen. Gegnerknöpfe speichern sofort. Verlauf zum Korrigieren über den Knopf „Verlauf“. Auswertung im Stil von Vorschlag A „Anzeigetafel“ (immer dunkel, große schmale Zahlen). Schriften sind in die App eingebaut, kein Abruf bei Google.
+- **Standardfarben** neuer Mannschaften: Rot #d7262e und Schwarz #16181d. Mannschaften mit den alten Standardfarben (Blau, Gelb) wurden automatisch umgestellt, selbst gewählte Farben bleiben.
+
 ## Nächste Schritte
 
 1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.

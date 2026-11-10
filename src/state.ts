@@ -3,7 +3,7 @@ import { signal } from '@preact/signals';
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'preact/hooks';
 import type { Kategorie, Team } from './model';
-import { db, ensureTeam } from './db';
+import { db, DEFAULT_COLORS, ensureTeam } from './db';
 import { prefs, savePrefs } from './prefs';
 
 export type Route =
@@ -42,8 +42,8 @@ export function useLive<T>(query: () => Promise<T> | T, deps: unknown[], initial
 
 export function applyTeamColors(t: Team | null) {
   const r = document.documentElement;
-  r.style.setProperty('--brand', t?.color1 || '#1f5fbf');
-  r.style.setProperty('--brand2', t?.color2 || '#f5c518');
+  r.style.setProperty('--brand', t?.color1 || DEFAULT_COLORS.color1);
+  r.style.setProperty('--brand2', t?.color2 || DEFAULT_COLORS.color2);
 }
 
 export function fmtDate(iso: string) {
@@ -105,7 +105,7 @@ export async function switchTeam(id: number) {
 export async function createTeam(name: string, kategorie: Kategorie, liga: string): Promise<number> {
   const cur = team.value;
   const id = await db.teams.add({
-    name, kategorie, liga, color1: cur?.color1 ?? '#1f5fbf', color2: cur?.color2 ?? '#f5c518', logo: cur?.logo,
+    name, kategorie, liga, color1: cur?.color1 ?? DEFAULT_COLORS.color1, color2: cur?.color2 ?? DEFAULT_COLORS.color2, logo: cur?.logo,
   });
   await switchTeam(id);
   return id;

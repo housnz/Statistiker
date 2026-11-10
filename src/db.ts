@@ -7,6 +7,9 @@ export interface Setting {
   value: unknown;
 }
 
+/** Standardfarben einer neuen Mannschaft (passend zum Logo). */
+export const DEFAULT_COLORS = { color1: '#d7262e', color2: '#16181d' };
+
 class StatistikerDB extends Dexie {
   teams!: Table<Team, number>;
   players!: Table<Player, number>;
@@ -23,6 +26,15 @@ class StatistikerDB extends Dexie {
       actions: '++id, matchId, [matchId+set], [matchId+seq]',
       settings: 'key',
     });
+    // Version 2: neues Design. Mannschaften mit den alten Standardfarben bekommen die neuen.
+    this.version(2).stores({}).upgrade((tx) =>
+      tx.table('teams').toCollection().modify((t: Team) => {
+        if (t.color1 === '#1f5fbf' && t.color2 === '#f5c518') {
+          t.color1 = DEFAULT_COLORS.color1;
+          t.color2 = DEFAULT_COLORS.color2;
+        }
+      }),
+    );
   }
 }
 
@@ -42,7 +54,7 @@ export async function requestPersistence(): Promise<boolean> {
 export async function ensureTeam(): Promise<Team> {
   const first = await db.teams.toCollection().first();
   if (first) return first;
-  const id = await db.teams.add({ name: 'Meine Mannschaft', kategorie: 'damen', color1: '#1f5fbf', color2: '#f5c518' });
+  const id = await db.teams.add({ name: 'Meine Mannschaft', kategorie: 'damen', ...DEFAULT_COLORS });
   return (await db.teams.get(id))!;
 }
 
@@ -94,4 +106,12 @@ export function downloadFile(name: string, content: BlobPart, type: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** Alle Daten als JSON-Datei speichern (z. B. in iCloud Drive). */
+export async function saveBackupFile() {
+  const b = await exportBackup();
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  downloadFile(`statistiker-sicherung-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`, JSON.stringify(b), 'application/json');
 }

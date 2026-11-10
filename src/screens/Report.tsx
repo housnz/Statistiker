@@ -1,4 +1,5 @@
-import { useMemo } from 'preact/hooks';
+// Auswertung im Stil "Anzeigetafel" (Vorschlag A): dunkel, große Zahlen.
+import { useEffect, useMemo } from 'preact/hooks';
 import { db } from '../db';
 import type { Action, Match, Player } from '../model';
 import { distribution } from '../model';
@@ -6,6 +7,8 @@ import { PlayerStats, pctLabel, setSummary, statsByPlayer, teamStats } from '../
 import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
+
+const SEG = { att: '#23a55a', srv: '#8fdcaa', blk: '#14b8a6', opp: '#7d8aa0' };
 
 export function Report({ matchId }: { matchId: number }) {
   const match = useLive(() => db.matches.get(matchId), [matchId], undefined as Match | undefined);
@@ -20,10 +23,17 @@ export function Report({ matchId }: { matchId: number }) {
     [] as Player[],
   );
 
+  // Die Auswertung ist immer dunkel: auch der Seitenhintergrund.
+  useEffect(() => {
+    const prev = document.body.style.background;
+    document.body.style.background = '#0f131a';
+    return () => { document.body.style.background = prev; };
+  }, []);
+
   const byPlayer = useMemo(() => statsByPlayer(actions), [actions]);
   const tot = useMemo(() => teamStats(actions), [actions]);
   const W = words();
-  if (!match) return <div class="page">Lade …</div>;
+  if (!match) return <div class="rep">Lade …</div>;
 
   const sets = match.sets.filter((s) => s.final || actions.some((a) => a.set === s.nr));
   const sums = sets.map((s) => setSummary(s.nr, s.final, actions.filter((a) => a.set === s.nr)));
@@ -35,33 +45,33 @@ export function Report({ matchId }: { matchId: number }) {
   const top = [...rows].sort((a, b) => b.s.points - a.s.points)[0];
   const recPos = tot.recP + tot.recG;
   const dist = distribution(actions);
+  const scale = Math.max(25, ...sums.map((s) => (s.final ? Math.max(s.final[0], s.final[1]) : s.counted[0])));
+  const bil = (b: number) => (b > 0 ? `+${b}` : b < 0 ? `−${-b}` : '0');
 
   return (
-    <div class="page">
-      <div class="topbar">
-        <button class="btn" onClick={() => go({ name: 'home' })}>‹ Zurück</button>
-        <div>
-          <div class="small muted">Spielauswertung {team.value?.name}</div>
+    <div class="rep">
+      <header>
+        <button class="rbtn2" onClick={() => go({ name: 'home' })} aria-label="Zurück">‹</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span class="kick">Spielauswertung {team.value?.name}</span>
           <h1>Matchstatistik gegen {match.opponent}</h1>
         </div>
-        <div class="spacer" />
-        {!match.finished && <button class="btn" onClick={() => go({ name: 'scout', matchId })}>Weiter erfassen</button>}
-        <button class="btn" disabled title="kommt im nächsten Schritt">PDF</button>
-        <button class="btn" disabled title="kommt im nächsten Schritt">Excel</button>
-      </div>
+        <div style={{ flex: 1 }} />
+        {!match.finished && <button class="rbtn2" onClick={() => go({ name: 'scout', matchId })}>Weiter erfassen</button>}
+        <button class="rbtn2" disabled title="kommt im nächsten Schritt">Excel</button>
+        <button class="rbtn2 red" disabled title="kommt im nächsten Schritt">PDF erstellen</button>
+      </header>
 
-      <div class="row" style={{ marginBottom: 14 }}>
-        <span style={{ fontSize: 40, fontWeight: 800 }}>{won}:{lost}</span>
-        <div class="setchips">
-          {sums.map((s) => <span class="setchip">{s.final ? `${s.final[0]}:${s.final[1]}` : `Satz ${s.nr} läuft`}</span>)}
-        </div>
-        <span class="muted">{fmtDate(match.date)}{match.place ? ` · ${match.place}` : ''}</span>
+      <div class="result">
+        <span class="big">{won} : {lost}</span>
+        {sums.map((s) => <span class="chipset">{s.final ? `${s.final[0]}:${s.final[1]}` : `Satz ${s.nr} läuft`}</span>)}
+        <span style={{ color: 'var(--r-muted)', fontSize: 15 }}>{fmtDate(match.date)}{match.place ? ` · ${match.place}` : ''}</span>
       </div>
 
       <div class="kpis">
         <Kpi l={W.top} v={top ? `${top.s.points}` : '0'} s={top ? top.p.name : ''} />
         <Kpi l="Kill-Quote" v={pctLabel(tot.attK, tot.att)} s={`${tot.attK} Punkte aus ${tot.att} Angriffen`} />
-        <Kpi l="Asse" v={`${tot.srvA}`} s={`${tot.srvE} Aufschlagfehler bei ${tot.srv} Aufschlägen`} />
+        <Kpi l="Asse" v={`${tot.srvA}`} s={`${tot.srvE} Fehler bei ${tot.srv} Aufschlägen`} />
         <Kpi l="Annahme positiv" v={pctLabel(recPos, tot.rec)} s={`${tot.recP} perfekt, ${tot.recG} gut, ${tot.recE} Fehler`} />
         <Kpi l="Blockpunkte" v={`${tot.blkK}`} s={`${tot.blkT} gute Touches`} />
         <Kpi l="Eigene Fehler" v={`${tot.errors}`} s="Angriff, Aufschlag, Annahme, Block, Sonstiges" />
@@ -69,7 +79,53 @@ export function Report({ matchId }: { matchId: number }) {
         <Kpi l="Nicht notiert" v={`${missing}`} s={missing ? 'eigene Punkte ohne Eintrag' : 'alle Sätze gehen auf'} />
       </div>
 
-      <div class="card" style={{ marginBottom: 16 }}>
+      <div class="two">
+        <section class="panel">
+          <h2>Satz für Satz: woher die Punkte kamen</h2>
+          {sums.map((s) => {
+            const o = s.ownPoints;
+            const parts: [number, string, boolean?][] = [[o.att, SEG.att], [o.srv, SEG.srv], [o.blk, SEG.blk], [o.oppSrv + o.oppF, SEG.opp], [Math.max(0, s.missing), '', true]];
+            const used = parts.reduce((n, [v]) => n + v, 0);
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div class="seglbl">
+                  <b>Satz {s.nr}</b>
+                  <span style={{ color: 'var(--r-muted)' }}>{s.final ? `${s.final[0]}:${s.final[1]}` : 'läuft'}{s.missing > 0 ? ` · ${s.missing} nicht notiert` : ''}</span>
+                </div>
+                <div class="setbar">
+                  {parts.filter(([v]) => v > 0).map(([v, c, dashed]) => (
+                    <div style={{ flex: `${v} 0 0`, ...(dashed ? { border: '2px dashed #9aa6b8' } : { background: c }) }} />
+                  ))}
+                  {scale - used > 0 && <div style={{ flex: `${scale - used} 0 0` }} />}
+                </div>
+              </div>
+            );
+          })}
+          <div class="lgd" style={{ marginTop: 'auto' }}>
+            <span><i style={{ background: SEG.att }} />Angriff</span>
+            <span><i style={{ background: SEG.srv }} />Ass</span>
+            <span><i style={{ background: SEG.blk }} />Block</span>
+            <span><i style={{ background: SEG.opp }} />Gegnerfehler</span>
+            <span><i style={{ border: '2px dashed #9aa6b8', boxSizing: 'border-box' }} />nicht notiert</span>
+          </div>
+        </section>
+
+        <section class="panel" style={{ gap: 4 }}>
+          <h2 style={{ marginBottom: 6 }}>Punkte und Fehler pro {W.one}</h2>
+          <div class="ptab h"><span>NAME</span><span>PKT</span><span>FEHLER</span><span>BILANZ</span><span>KILL</span><span>ASSE</span><span>ANNAHME</span></div>
+          {rows.map(({ p, s }) => (
+            <div class="ptab">
+              <b>{p.number != null ? `${p.number} ` : ''}{p.name}</b>
+              <span>{s.points}</span><span>{s.errors}</span>
+              <span class="bil">{bil(s.balance)}</span>
+              <span>{pctLabel(s.attK, s.att)}</span><span>{s.srvA}</span><span>{pctLabel(s.recP + s.recG, s.rec)}</span>
+            </div>
+          ))}
+          {!rows.length && <p>Noch keine Aktionen erfasst.</p>}
+        </section>
+      </div>
+
+      <section class="panel">
         <h2>Die Sätze in Zahlen</h2>
         <div class="scroll-x">
           <table class="data">
@@ -87,9 +143,9 @@ export function Report({ matchId }: { matchId: number }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <div class="card" style={{ marginBottom: 16 }}>
+      <section class="panel">
         <h2>Alle Werte pro {W.one}</h2>
         <div class="scroll-x">
           <table class="data">
@@ -119,32 +175,32 @@ export function Report({ matchId }: { matchId: number }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <div class="grid2">
-        <div class="card">
+      <div class="two">
+        <section class="panel">
           <h2>Zuspielverteilung</h2>
-          <div class="distbar" style={{ height: 34 }}>
+          <div class="distbar">
             {(['p4', 'p3', 'p2', 'back'] as const).map((k) =>
-              dist[k] ? <div style={{ width: `${(dist[k] / dist.total) * 100}%`, background: DIST_COLORS[k] }}>{dist[k]}</div> : null,
+              dist[k] ? <div style={{ flex: `${dist[k]} 0 0`, background: DIST_COLORS[k] }}>{dist[k]}</div> : null,
             )}
           </div>
-          <p class="small muted">über 4: {pctLabel(dist.p4, dist.total)} · über 3: {pctLabel(dist.p3, dist.total)} · über 2: {pctLabel(dist.p2, dist.total)} · hinten: {pctLabel(dist.back, dist.total)}</p>
-        </div>
-        <div class="card">
+          <p>über 4: {pctLabel(dist.p4, dist.total)} · über 3: {pctLabel(dist.p3, dist.total)} · über 2: {pctLabel(dist.p2, dist.total)} · hinten: {pctLabel(dist.back, dist.total)}</p>
+        </section>
+        <section class="panel">
           <h2>So wurde gezählt</h2>
-          <p class="small muted" style={{ margin: 0 }}>
+          <p>
             Punkte = Angriffspunkte + Asse + Blockpunkte. Fehler = Angriff (Fehler und geblockt) + Aufschlagfehler + Annahmefehler + Blockfehler + sonstige Fehler. Bilanz = Punkte minus Fehler.
-            Kill-Quote = Angriffspunkte / Angriffe. Effizienz = (Punkte − Fehler − geblockt) / Angriffe. Annahme positiv = perfekt + gut.
+            Kill-Quote = Angriffspunkte / Angriffe. Effizienz = (Punkte minus Fehler minus geblockt) / Angriffe. Annahme positiv = perfekt + gut.
           </p>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
 function Kpi({ l, v, s }: { l: string; v: string; s: string }) {
-  return <div class="kpi"><div class="l">{l}</div><div class="v">{v}</div><div class="s">{s}</div></div>;
+  return <div class="kpi"><span class="kick">{l}</span><span class="v">{v}</span><span class="s">{s}</span></div>;
 }
 
 function PRow({ name, s, total }: { name: string; s: PlayerStats; total?: boolean }) {

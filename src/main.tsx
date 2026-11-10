@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
+import './fonts';
 import './styles.css';
 import { requestPersistence } from './db';
 import { loadPrefs, prefs } from './prefs';
