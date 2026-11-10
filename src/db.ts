@@ -108,10 +108,11 @@ export function downloadFile(name: string, content: BlobPart, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-/** Alle Daten als JSON-Datei speichern (z. B. in iCloud Drive). */
+/** Alle Daten als JSON-Datei anbieten (Teilen-Menü, z. B. in iCloud Drive sichern). */
 export async function saveBackupFile() {
+  const { offerFile } = await import('./share');
   const b = await exportBackup();
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
-  downloadFile(`statistiker-sicherung-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`, JSON.stringify(b), 'application/json');
+  offerFile(new Blob([JSON.stringify(b)], { type: 'application/json' }), `statistiker-sicherung-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`, 'Die Sicherung');
 }

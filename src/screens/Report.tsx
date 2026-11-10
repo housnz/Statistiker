@@ -8,6 +8,7 @@ import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
 import { ProReport } from './ProReport';
+import { exportPdf, exportXlsx } from '../exporting';
 
 const SEG = { att: '#23a55a', srv: '#8fdcaa', blk: '#14b8a6', opp: '#7d8aa0' };
 
@@ -59,8 +60,8 @@ export function Report({ matchId }: { matchId: number }) {
         </div>
         <div style={{ flex: 1 }} />
         {!match.finished && <button class="rbtn2" onClick={() => go({ name: 'scout', matchId })}>Weiter erfassen</button>}
-        <button class="rbtn2" disabled title="kommt im nächsten Schritt">Excel</button>
-        <button class="rbtn2 red" disabled title="kommt im nächsten Schritt">PDF erstellen</button>
+        <button class="rbtn2" onClick={() => exportXlsx(matchId)}>Excel</button>
+        <button class="rbtn2 red" onClick={() => exportPdf(matchId)}>PDF erstellen</button>
       </header>
 
       <div class="result">

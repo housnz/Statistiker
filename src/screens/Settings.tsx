@@ -1,9 +1,12 @@
 import { useRef } from 'preact/hooks';
-import { db, downloadFile, exportBackup, importBackup } from '../db';
+import { db, importBackup, saveBackupFile } from '../db';
+import { exportPdf, exportXlsx } from '../exporting';
+import { setsWon } from './Home';
+import type { Match } from '../model';
 import { createDemoTeam } from '../demo';
 import { ElementKey, INPUT_ELEMENTS, Kategorie, Team } from '../model';
 import { prefs, savePrefs } from '../prefs';
-import { applyTeamColors, ask, deleteTeam, go, reloadTeam, switchTeam, team, toast, todayIso, useLive } from '../state';
+import { applyTeamColors, ask, deleteTeam, go, reloadTeam, switchTeam, team, toast, useLive } from '../state';
 import { KategorieSeg } from './Teams';
 
 export function Settings() {
@@ -42,11 +45,12 @@ export function Settings() {
     r.readAsDataURL(f);
   };
 
-  const backup = async () => {
-    const b = await exportBackup();
-    downloadFile(`statistiker-sicherung-${todayIso()}.json`, JSON.stringify(b), 'application/json');
-    toast('Sicherung erstellt');
-  };
+  const backup = () => saveBackupFile();
+  const matches = useLive(
+    async () => (await db.matches.where('teamId').equals(t.id!).toArray()).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt),
+    [t.id],
+    [] as Match[],
+  );
   const restore = async (e: Event) => {
     const f = (e.target as HTMLInputElement).files?.[0];
     if (!f) return;
@@ -160,12 +164,28 @@ export function Settings() {
           </div>
         </div>
 
+        <div class="card stack" style={{ gridColumn: '1 / -1' }}>
+          <h2>Auswertungen exportieren · {t.name}</h2>
+          <p class="small muted" style={{ margin: 0 }}>PDF zum Weiterleiten an Team und Trainer, Excel zum Weiterrechnen. Die Dateien entstehen direkt auf diesem Gerät.</p>
+          {!matches.length && <div class="muted">Noch keine Spiele in dieser Mannschaft.</div>}
+          {matches.map((m) => {
+            const [a, b2] = setsWon(m);
+            return (
+              <div class="row" style={{ borderTop: '1px solid var(--rule)', paddingTop: 8 }}>
+                <span class="num small muted" style={{ minWidth: 86 }}>{m.date.split('-').reverse().join('.')}</span>
+                <b style={{ flex: 1 }}>gegen {m.opponent} <span class="num">{a}:{b2}</span></b>
+                <button class="btn" onClick={() => exportXlsx(m.id!)}>Excel</button>
+                <button class="btn primary" onClick={() => exportPdf(m.id!)}>PDF</button>
+              </div>
+            );
+          })}
+        </div>
+
         <div class="card stack">
           <h2>Ausprobieren</h2>
           <p class="small muted" style={{ margin: 0 }}>Legt ein zusätzliches Demo-Team mit erfundenen Namen und einem Beispielspiel an. Deine eigenen Mannschaften bleiben unverändert.</p>
           <div class="row"><button class="btn" onClick={demo}>Demo-Team anlegen</button></div>
-          <p class="small muted" style={{ margin: 0 }}>PDF- und Excel-Export folgen im nächsten Schritt.</p>
-        </div>
+                  </div>
       </div>
     </div>
   );

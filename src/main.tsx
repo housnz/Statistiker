@@ -12,6 +12,7 @@ import { Scout } from './screens/Scout';
 import { Report } from './screens/Report';
 import { Settings } from './screens/Settings';
 import { AskDialog } from './AskDialog';
+import { FileDialogs } from './share';
 import { ProScout } from './screens/ProScout';
 import { db } from './db';
 import { useLive } from './state';
@@ -41,6 +42,7 @@ function App() {
       {r.name === 'report' && <Report matchId={r.matchId} />}
       {r.name === 'settings' && <Settings />}
       <AskDialog />
+      <FileDialogs />
       {toastMsg.value && <div class="toast">{toastMsg.value}</div>}
     </>
   );

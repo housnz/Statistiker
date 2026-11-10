@@ -33,9 +33,10 @@ Stand 9. November 2026, erster Prototyp.
   - Video läuft in der App. Die Datei bleibt auf dem Gerät und wird nur im Speicher geöffnet. Gespeichert werden der Dateiname und pro Aktion die Videozeit. Szenen starten 3 Sekunden vorher.
   - Profi-Auswertung: Sideout, Break, First-Ball-Sideout, Sideout und Break pro Läufer, Angriff nach Annahme oder im Konter, Verteilung nach guter oder schwacher Annahme, Zielzonen für Angriff und Aufschlag, Zuspiel pro Zuspielerin, Abwehr pro Person, Videoszenen mit Filter.
 
+- **PDF und Excel** (10.11.2026): beides entsteht direkt auf dem Gerät, ohne Server. PDF mit jsPDF, Schriften IBM Plex und Barlow Condensed eingebettet (aus den App-Schriften umgewandelt, Skript `scripts/woff2ttf.py`). Aufbau: 1 Überblick (Ergebnis, Einleitung, 8 Kacheln, Fazit mit 8 neutralen Punkten, Satz für Satz), 2 Sätze und Spielerinnen, 3 Positionen, Aufschlag, So wurde gezählt, Datenqualität, 4 pro Satz (bei Profi mit Aufstellung), 5 nur Profi (Sideout und Break, Läufer, Phasen, Zielzonen, Zuspiel, Abwehr). Excel mit den Blättern Übersicht, Alle Werte, Läufer (nur Profi), Pro Satz, Aktionen (jede Aktion einzeln, bei Profi mit Ballwechsel, Läufer, Spielstand und Videozeit).
+- **Weitergeben:** fertige Datei im Dialog „ist fertig“. Auf dem iPad „Teilen oder sichern“ (Teilen-Menü: Dateien, WhatsApp, Mail), sonst Herunterladen. Gilt auch für die Sicherung. Export-Knöpfe in der Auswertung und in den Einstellungen.
+
 ## Nächste Schritte
 
 1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.
-2. PDF-Report im Layout der bisherigen Auswertungen (inklusive Profi-Teil).
-3. Excel-Export.
-4. Bogen nachtragen (digitale Bogen-Ansicht zum Abtippen).
+2. Bogen nachtragen (digitale Bogen-Ansicht zum Abtippen).

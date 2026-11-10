@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { db, saveBackupFile } from '../db';
 import { Logo } from '../logo';
-import { fmtDate, go, switchTeam, team, toast, useLive, words } from '../state';
+import { fmtDate, go, switchTeam, team, useLive, words } from '../state';
 import { NewTeamDialog } from './Teams';
 import type { Match, Team } from '../model';
 
@@ -36,7 +36,6 @@ export function Home() {
 
   const backup = async () => {
     await saveBackupFile();
-    toast('Sicherung erstellt');
   };
 
   return (
