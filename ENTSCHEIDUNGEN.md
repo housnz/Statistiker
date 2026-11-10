@@ -30,6 +30,7 @@ Stand 9. November 2026, erster Prototyp.
   - Pro Satz Startaufstellung (Position I bis VI), Libero, Zuspielerin für die Läufer und wer zuerst aufschlägt. Automatische Rotation bei Sideout. Wechsel über einen eigenen Knopf. Libero wird direkt angetippt, Libero-Wechsel muss man nicht eintragen.
   - Läufer = Position der Zuspielerin (1 bis 6).
   - Bei eigenem Aufschlag ist die Aufschlägerin vorgewählt. Diese Vorwahl zählt nicht als Schritt.
+  - Die Vorwahl folgt immer der Person auf Position I (10.11.2026, Fehlerkorrektur): Nach einem Wechsel der Aufschlägerin (oder einem zurückgenommenen Wechsel) springt die Vorwahl auf die neue Person, auch wenn das Ergebnis schon getippt ist. Nach „Schritt zurück“ wird beim erneuten Erreichen des Ballwechsels wieder vorgewählt. „Abbrechen“ wählt nicht sofort wieder vor. Wer selbst eine andere Person antippt, behält seine Wahl.
   - Video läuft in der App. Die Datei bleibt auf dem Gerät und wird nur im Speicher geöffnet. Gespeichert werden der Dateiname und pro Aktion die Videozeit. Szenen starten 3 Sekunden vorher.
   - Profi-Auswertung: Sideout, Break, First-Ball-Sideout, Sideout und Break pro Läufer, Angriff nach Annahme oder im Konter, Verteilung nach guter oder schwacher Annahme, Zielzonen für Angriff und Aufschlag, Zuspiel pro Zuspielerin, Abwehr pro Person, Videoszenen mit Filter.
 
@@ -37,9 +38,9 @@ Stand 9. November 2026, erster Prototyp.
 - **Weitergeben:** fertige Datei im Dialog „ist fertig“. Auf dem iPad „Teilen oder sichern“ (Teilen-Menü: Dateien, WhatsApp, Mail), sonst Herunterladen. Gilt auch für die Sicherung. Export-Knöpfe in der Auswertung und in den Einstellungen.
 
 - **Abwehr** (10.11.2026, Momo): zwei Arten verlorener Bälle. „Fehler (vermeidbar)“ (Ballkontrolle, Absprache) zählt als eigener Fehler und senkt die Bilanz. „Gegner punktet (unhaltbar)“ ist ein gut erzielter Gegnerpunkt: Punkt für den Gegner, kein eigener Fehler, zählt bei „vom Gegner erspielt“. Zeichen im Bogen: = und ×.
+- **Texte und Vorzeichen** (10.11.2026): Einzahl wird ausgeschrieben („1 Punkt aus 1 Angriff“, „1 Ass“). Negative Werte stehen in App und PDF überall mit dem echten Minuszeichen (−). In Excel bleiben es Zahlen. Die Kachel „Eigene Fehler“ nennt im Profi-Spiel auch Zuspiel und Abwehr.
 - **Veröffentlichung:** GitHub Pages über GitHub Actions (`.github/workflows/pages.yml`), baut bei jeder Änderung auf `main` neu.
 
 ## Nächste Schritte
 
-1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.
-2. Bogen nachtragen (digitale Bogen-Ansicht zum Abtippen).
+1. Bogen nachtragen (digitale Bogen-Ansicht zum Abtippen).

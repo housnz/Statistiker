@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'preact/hooks';
 import { db } from '../db';
 import type { Action, Match, Player } from '../model';
 import { distribution } from '../model';
-import { PlayerStats, pctLabel, setSummary, statsByPlayer, teamStats } from '../stats';
+import { PlayerStats, bil, pctLabel, setSummary, statsByPlayer, teamStats } from '../stats';
 import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
@@ -48,7 +48,7 @@ export function Report({ matchId }: { matchId: number }) {
   const recPos = tot.recP + tot.recG;
   const dist = distribution(actions);
   const scale = Math.max(25, ...sums.map((s) => (s.final ? Math.max(s.final[0], s.final[1]) : s.counted[0])));
-  const bil = (b: number) => (b > 0 ? `+${b}` : b < 0 ? `−${-b}` : '0');
+  const one = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
 
   return (
     <div class="rep">
@@ -72,11 +72,11 @@ export function Report({ matchId }: { matchId: number }) {
 
       <div class="kpis">
         <Kpi l={W.top} v={top ? `${top.s.points}` : '0'} s={top ? top.p.name : ''} />
-        <Kpi l="Kill-Quote" v={pctLabel(tot.attK, tot.att)} s={`${tot.attK} Punkte aus ${tot.att} Angriffen`} />
-        <Kpi l="Asse" v={`${tot.srvA}`} s={`${tot.srvE} Fehler bei ${tot.srv} Aufschlägen`} />
+        <Kpi l="Kill-Quote" v={pctLabel(tot.attK, tot.att)} s={`${one(tot.attK, 'Punkt', 'Punkte')} aus ${one(tot.att, 'Angriff', 'Angriffen')}`} />
+        <Kpi l="Asse" v={`${tot.srvA}`} s={`${tot.srvE} Fehler bei ${one(tot.srv, 'Aufschlag', 'Aufschlägen')}`} />
         <Kpi l="Annahme positiv" v={pctLabel(recPos, tot.rec)} s={`${tot.recP} perfekt, ${tot.recG} gut, ${tot.recE} Fehler`} />
         <Kpi l="Blockpunkte" v={`${tot.blkK}`} s={`${tot.blkT} gute Touches`} />
-        <Kpi l="Eigene Fehler" v={`${tot.errors}`} s="Angriff, Aufschlag, Annahme, Block, Sonstiges" />
+        <Kpi l="Eigene Fehler" v={`${tot.errors}`} s={`Angriff, Aufschlag, Annahme, Block, Sonstiges${match.mode === 'profi' ? ', Zuspiel, Abwehr' : ''}`} />
         <Kpi l="Fehler des Gegners" v={`${oppErr}`} s="Aufschlag und sonstige" />
         <Kpi l="Nicht notiert" v={`${missing}`} s={missing ? 'eigene Punkte ohne Eintrag' : 'alle Sätze gehen auf'} />
       </div>
@@ -194,7 +194,7 @@ export function Report({ matchId }: { matchId: number }) {
         <section class="panel">
           <h2>So wurde gezählt</h2>
           <p>
-            Punkte = Angriffspunkte + Asse + Blockpunkte. Fehler = Angriff (Fehler und geblockt) + Aufschlagfehler + Annahmefehler + Blockfehler + sonstige Fehler. Bilanz = Punkte minus Fehler.
+            Punkte = Angriffspunkte + Asse + Blockpunkte. Fehler = Angriff (Fehler und geblockt) + Aufschlagfehler + Annahmefehler + Blockfehler + sonstige Fehler{match.mode === 'profi' ? ' + Zuspielfehler + vermeidbare Abwehrfehler' : ''}. Bilanz = Punkte minus Fehler.
             Kill-Quote = Angriffspunkte / Angriffe. Effizienz = (Punkte minus Fehler minus geblockt) / Angriffe. Annahme positiv = perfekt + gut.
           </p>
         </section>
@@ -208,11 +208,11 @@ function Kpi({ l, v, s }: { l: string; v: string; s: string }) {
 }
 
 function PRow({ name, s, total }: { name: string; s: PlayerStats; total?: boolean }) {
-  const eff = s.att ? `${Math.round(((s.attK - s.attE - s.attB) / s.att) * 100)} %` : '·';
+  const eff = pctLabel(s.attK - s.attE - s.attB, s.att);
   return (
     <tr class={total ? 'total' : ''}>
       <td>{name}</td>
-      <td>{s.points}</td><td>{s.errors}</td><td>{s.balance > 0 ? `+${s.balance}` : s.balance}</td>
+      <td>{s.points}</td><td>{s.errors}</td><td>{bil(s.balance)}</td>
       <td>{s.att}</td><td>{s.attK}</td><td>{s.attB}</td><td>{s.attE}</td><td>{pctLabel(s.attK, s.att)}</td><td>{eff}</td>
       <td>{s.srv}</td><td>{s.srvA}</td><td>{s.srvE}</td>
       <td>{s.rec}</td><td>{pctLabel(s.recP + s.recG, s.rec)}</td><td>{s.recE}</td>

@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import { Action, EL, ElementKey, INPUT_ELEMENTS, Match, Player, describeAction, effectOf } from '../model';
 import { proStats, replaySet, zoneStats } from '../rally';
-import { pctLabel, statsByPlayer } from '../stats';
+import { bil, pctLabel, statsByPlayer } from '../stats';
 import { words } from '../state';
 import { VideoPlayer, fmtTime, seekTo, video } from '../video';
 import { DIST_COLORS } from './Scout';
@@ -19,7 +19,7 @@ export function ProReport({ match, actions, players }: { match: Match; actions: 
   const setters = players.filter((p) => (byPlayer.get(p.id!)?.set ?? 0) > 0);
   const diggers = players.filter((p) => (byPlayer.get(p.id!)?.dig ?? 0) > 0);
   const phase = (x: { all: number; k: number; b: number; e: number }) => ({
-    ...x, kill: pctLabel(x.k, x.all), eff: x.all ? `${Math.round(((x.k - x.e - x.b) / x.all) * 100)} %` : '·',
+    ...x, kill: pctLabel(x.k, x.all), eff: pctLabel(x.k - x.e - x.b, x.all),
   });
   const aRec = phase(ps.attAfterRec);
   const aTr = phase(ps.attTransition);
@@ -50,7 +50,7 @@ export function ProReport({ match, actions, players }: { match: Match; actions: 
               <Bar v={pctN(r.soWon, r.soAll)} color="#3b82f6" />
               <span class="num">{r.bpWon}/{r.bpAll}</span>
               <Bar v={pctN(r.bpWon, r.bpAll)} color="#14b8a6" />
-              <span class="num">{r.won - r.lost > 0 ? '+' : ''}{r.won - r.lost}</span>
+              <span class="num">{bil(r.won - r.lost)}</span>
             </div>
           ))}
         </section>
@@ -78,7 +78,7 @@ export function ProReport({ match, actions, players }: { match: Match; actions: 
             <ZoneCourt title="Angriff" data={attZ.zones} ptLabel="Punkte" />
             <ZoneCourt title="Aufschlag" data={srvZ.zones} ptLabel="Asse" />
           </div>
-          <p>Gegnerfeld von unserer Seite gesehen, Netz unten. Zahl = Anzahl, darunter Punkte bzw. Asse. {attZ.without + srvZ.without > 0 ? `${attZ.without + srvZ.without} Aktionen ohne Zone.` : ''}</p>
+          <p>Gegnerfeld von unserer Seite gesehen, Netz unten. Zahl = Anzahl, darunter Punkte bzw. Asse. {attZ.without + srvZ.without > 0 ? `${attZ.without + srvZ.without} ${attZ.without + srvZ.without === 1 ? 'Aktion' : 'Aktionen'} ohne Zone.` : ''}</p>
         </section>
 
         <section class="panel">
@@ -149,7 +149,7 @@ function ZoneCourt({ title, data, ptLabel }: { title: string; data: Record<numbe
             <div class="zcell" style={{ background: `rgba(59, 130, 246, ${0.12 + (v.all / max) * 0.6})` }}>
               <span class="zn">{z}</span>
               <span class="zv">{v.all}</span>
-              <span class="zs">{v.pts} {ptLabel}</span>
+              <span class="zs">{v.pts} {v.pts === 1 ? ptLabel.replace(/e$/, '') : ptLabel}</span>
             </div>
           );
         })}

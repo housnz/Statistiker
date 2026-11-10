@@ -94,4 +94,8 @@ export function setSummary(nr: number, final: [number, number] | null, actions: 
 }
 
 export const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0);
-export const pctLabel = (n: number, d: number) => (d ? `${pct(n, d)} %` : '·');
+/** Prozentwert als Text, negative Werte mit echtem Minuszeichen. */
+export const pctLabel = (n: number, d: number) => (d ? `${pct(n, d)} %`.replace('-', '−') : '·');
+
+/** Bilanz mit Vorzeichen, überall mit echtem Minuszeichen. */
+export const bil = (b: number) => (b > 0 ? `+${b}` : b < 0 ? `−${-b}` : '0');

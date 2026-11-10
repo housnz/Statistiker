@@ -45,13 +45,21 @@ export function ProScout({ matchId }: { matchId: number }) {
   }, [match?.id, setNr, st.ready]);
 
   // Neuer Ballwechsel mit eigenem Aufschlag: Aufschlägerin schon vorwählen.
+  // Der Schlüssel merkt sich, für welchen Ballwechsel und welche Aufschlägerin schon vorgewählt wurde.
+  const fresh = st.ready && !cur.actions.length && cur.server === 'us';
+  const serverId = cur.slots[0];
+  const autoNow = `${setNr}-${cur.nr}-${serverId}`;
+  const blank = d.playerId == null && !d.element && d.editId == null;
   useEffect(() => {
-    const key = `${setNr}-${cur.nr}`;
-    if (!st.ready || cur.actions.length || cur.server !== 'us' || autoKey === key) return;
-    if (d.playerId != null || d.element || d.editId != null) return;
-    setAutoKey(key);
-    setD({ ...EMPTY, playerId: cur.slots[0], element: 'srv', steps: ['player', 'element'], auto: true });
-  }, [st.ready, setNr, cur.nr, cur.actions.length, cur.server, d.playerId == null && !d.element && d.editId == null]);
+    if (d.auto && d.editId == null) {
+      // Die Vorwahl passt nicht mehr: andere Aufschlägerin (Wechsel) oder kein frischer eigener Aufschlag.
+      if (fresh && d.playerId !== serverId) { setAutoKey(autoNow); setD({ ...d, playerId: serverId }); return; }
+      if (!fresh && !d.result) { setD(EMPTY); return; }
+    }
+    if (!fresh || autoKey === autoNow || !blank) return;
+    setAutoKey(autoNow);
+    setD({ ...EMPTY, playerId: serverId, element: 'srv', steps: ['player', 'element'], auto: true });
+  }, [fresh, autoNow, autoKey, blank, d.auto, d.playerId, d.result]);
 
   // Speichern, sobald alles Nötige gewählt ist.
   useEffect(() => {
@@ -96,7 +104,7 @@ export function ProScout({ matchId }: { matchId: number }) {
     const last = setActions[setActions.length - 1];
     if (!last) return;
     await db.actions.delete(last.id!);
-    setAutoKey(`${setNr}-${cur.nr}`); // nicht sofort wieder vorwählen
+    setAutoKey(''); // der zurückgenommene Ballwechsel darf später wieder vorwählen
     if (last.element === 'sub') { toast('Wechsel zurückgenommen'); return; }
     setD(stepBack(draftFrom(last, true)));
     toast(`Zurückgeholt: ${describeAction(last, pmap.get(last.playerId!))}`);
@@ -261,7 +269,7 @@ export function ProScout({ matchId }: { matchId: number }) {
             <div class="row">
               {n.to && <button class="btn" onClick={pickNoZone}>ohne Zone</button>}
               {editing && <button class="btn danger" onClick={deleteEdit}>Löschen</button>}
-              <button class="btn ghost" onClick={() => { setAutoKey(`${setNr}-${cur.nr}`); setD(EMPTY); }}>Abbrechen</button>
+              <button class="btn ghost" onClick={() => { setAutoKey(autoNow); setD(EMPTY); }}>Abbrechen</button>
             </div>
           )}
         </aside>

@@ -171,10 +171,10 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
 
   // Kacheln
   const tiles: [string, string, string][] = [
-    ['Ergebnis', `${won}:${lost}`, `${sums.length} Sätze`],
+    ['Ergebnis', `${won}:${lost}`, pl(sums.length, 'Satz', 'Sätze')],
     [TOP, ranked[0] ? String(ranked[0].s.points) : '0', ranked[0] ? name(ranked[0].p) : ''],
-    ['Kill-Quote', pctLabel(tot.attK, tot.att), `${tot.attK} aus ${tot.att} Angriffen`],
-    ['Asse', String(tot.srvA), `${tot.srvE} Fehler bei ${tot.srv} Aufschlägen`],
+    ['Kill-Quote', pctLabel(tot.attK, tot.att), `${tot.attK} aus ${pl(tot.att, 'Angriff', 'Angriffen')}`],
+    ['Asse', String(tot.srvA), `${tot.srvE} Fehler bei ${pl(tot.srv, 'Aufschlag', 'Aufschlägen')}`],
     ['Annahme positiv', pctLabel(tot.recP + tot.recG, tot.rec), `${tot.recP} perfekt, ${tot.recG} gut, ${tot.recE} Fehler`],
     ['Blockpunkte', String(tot.blkK), `${tot.blkT} gute Touches`],
     ['Eigene Fehler', String(tot.errors), 'alle Elemente zusammen'],
@@ -197,8 +197,8 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   const eff = tot.att ? Math.round(((tot.attK - tot.attE - tot.attB) / tot.att) * 100) : 0;
   const top3 = ranked.slice(0, 3).map((r) => `${name(r.p)} ${r.s.points}`).join(', ');
   const fazit = [
-    `Angriff: ${tot.attK} Punkte aus ${tot.att} Angriffen (Kill-Quote ${pctLabel(tot.attK, tot.att)}), ${tot.attB} geblockt, ${tot.attE} Fehler, Effizienz ${eff} %.`,
-    `Aufschlag: ${pl(tot.srvA, 'Ass', 'Asse')} und ${tot.srvE} Fehler bei ${tot.srv} Aufschlägen.`,
+    `Angriff: ${pl(tot.attK, 'Punkt', 'Punkte')} aus ${pl(tot.att, 'Angriff', 'Angriffen')} (Kill-Quote ${pctLabel(tot.attK, tot.att)}), ${tot.attB} geblockt, ${tot.attE} Fehler, Effizienz ${String(eff).replace('-', '−')} %.`,
+    `Aufschlag: ${pl(tot.srvA, 'Ass', 'Asse')} und ${tot.srvE} Fehler bei ${pl(tot.srv, 'Aufschlag', 'Aufschlägen')}.`,
     `Annahme: ${tot.rec} Annahmen, davon ${pctLabel(tot.recP + tot.recG, tot.rec)} positiv (${tot.recP} perfekt, ${tot.recG} gut) und ${tot.recE} Fehler.`,
     `Block: ${tot.blkK} Blockpunkte, ${tot.blkT} gute Touches, ${tot.blkE} Blockfehler.`,
     `Eigene Fehler: ${tot.errors} gesamt (Angriff ${tot.attE + tot.attB}, Aufschlag ${tot.srvE}, Annahme ${tot.recE}, Block ${tot.blkE}, Sonstiges ${tot.othE}${tot.setE + tot.digE ? `, Zuspiel und Abwehr ${tot.setE + tot.digE}` : ''}).`,
@@ -288,7 +288,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
 
   y = h2(`Alle Werte pro ${P1}`, y);
   const row = (n: string, s: PlayerStats) => [n, s.points, s.errors, sgn(s.balance), s.att, s.attK, s.attB, s.attE, pctLabel(s.attK, s.att),
-    s.att ? `${Math.round(((s.attK - s.attE - s.attB) / s.att) * 100)} %` : '·', s.srv, s.srvA, s.srvE, s.rec, pctLabel(s.recP + s.recG, s.rec), s.recE, s.blkK, s.blkT, s.blkE, s.othE];
+    pctLabel(s.attK - s.attE - s.attB, s.att), s.srv, s.srvA, s.srvE, s.rec, pctLabel(s.recP + s.recG, s.rec), s.recE, s.blkK, s.blkT, s.blkE, s.othE];
   autoTable(doc, {
     ...tableBase, startY: y,
     styles: { ...tableBase.styles, fontSize: 7, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 } },
@@ -334,7 +334,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     const za = atts.filter((a) => a.pos === z);
     if (za.length) {
       const k = za.filter((a) => a.result === 'K').length, e = za.filter((a) => a.result === 'E' || a.result === 'B').length;
-      zoneAtt[z] = [`${pct(za.length, atts.length)} %`, `${za.length} Angriffe`, `Kill ${pct(k, za.length)} % · Eff. ${Math.round(((k - e) / za.length) * 100)} %`];
+      zoneAtt[z] = [`${pct(za.length, atts.length)} %`, `${za.length} Angriffe`, `Kill ${pct(k, za.length)} % · Eff. ${pctLabel(k - e, za.length)}`];
       shAtt[z] = za.length / Math.max(1, atts.length);
     }
     const zr = recs.filter((a) => a.pos === z);
@@ -447,7 +447,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     }
     y += 10;
     y = h2('Angriff nach Annahme und im Konter', y);
-    const ph = (l: string, x: { all: number; k: number; b: number; e: number }) => [l, x.all, x.k, x.b, x.e, pctLabel(x.k, x.all), x.all ? `${Math.round(((x.k - x.e - x.b) / x.all) * 100)} %` : '·'];
+    const ph = (l: string, x: { all: number; k: number; b: number; e: number }) => [l, x.all, x.k, x.b, x.e, pctLabel(x.k, x.all), pctLabel(x.k - x.e - x.b, x.all)];
     autoTable(doc, {
       ...tableBase, startY: y,
       head: [['', 'Angriffe', 'Punkte', 'geblockt', 'Fehler', 'Kill', 'Effizienz']],
@@ -466,7 +466,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
         rect(zx + 1.5, zy, cw - 3, ch, data[z].all ? mix(C.p4, data[z].all / max) : C.soft, 4);
         font('Plex', 7, true, C.muted); doc.text(String(z), zx + 6, zy + 4, { baseline: 'top' });
         font('Big', 15); doc.text(String(data[z].all), zx + cw / 2, zy + 9, { align: 'center', baseline: 'top' });
-        font('Plex', 7, false, C.ink); doc.text(`${data[z].pts} ${ptl}`, zx + cw / 2, zy + 27, { align: 'center', baseline: 'top' });
+        font('Plex', 7, false, C.ink); doc.text(`${data[z].pts} ${data[z].pts === 1 ? ptl.replace(/e$/, '') : ptl}`, zx + cw / 2, zy + 27, { align: 'center', baseline: 'top' });
       });
       const ny = top + 18 + 2 * (ch + 3) + 1;
       doc.setDrawColor(C.ink); doc.setLineWidth(2.5); doc.line(x, ny, x + zW, ny);
