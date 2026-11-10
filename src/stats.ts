@@ -8,7 +8,7 @@ export interface PlayerStats {
   rec: number; recP: number; recG: number; recO: number; recS: number; recE: number;
   blkK: number; blkT: number; blkE: number;
   set: number; setG: number; setL: number; setN: number; setE: number;
-  dig: number; digG: number; digO: number; digE: number;
+  dig: number; digG: number; digO: number; digE: number; digU: number;
   othE: number;
 }
 
@@ -20,7 +20,7 @@ export function emptyStats(): PlayerStats {
     rec: 0, recP: 0, recG: 0, recO: 0, recS: 0, recE: 0,
     blkK: 0, blkT: 0, blkE: 0,
     set: 0, setG: 0, setL: 0, setN: 0, setE: 0,
-    dig: 0, digG: 0, digO: 0, digE: 0,
+    dig: 0, digG: 0, digO: 0, digE: 0, digU: 0,
     othE: 0,
   };
 }
@@ -31,7 +31,7 @@ const FIELD: Record<string, Record<string, keyof PlayerStats>> = {
   rec: { P: 'recP', G: 'recG', O: 'recO', S: 'recS', E: 'recE' },
   blk: { K: 'blkK', T: 'blkT', E: 'blkE' },
   set: { G: 'setG', L: 'setL', N: 'setN', E: 'setE' },
-  dig: { G: 'digG', O: 'digO', E: 'digE' },
+  dig: { G: 'digG', O: 'digO', E: 'digE', U: 'digU' },
   oth: { E: 'othE' },
 };
 

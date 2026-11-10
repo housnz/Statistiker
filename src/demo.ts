@@ -126,9 +126,9 @@ async function createDemoProMatch(teamId: number, ids: number[]) {
           if (b === 'K') { winner = 'us'; break; }
           if (b === 'E') { winner = 'them'; break; }
         }
-        const dg = wpick<string>([['G', 4], ['O', 3], ['E', 2]]);
+        const dg = wpick<string>([['G', 4], ['O', 3], ['E', 0.8], ['U', 1.4]]);
         add({ playerId: pick(back()), element: 'dig', result: dg });
-        if (dg === 'E') { winner = 'them'; break; }
+        if (dg === 'E' || dg === 'U') { winner = 'them'; break; }
         winner = attack();
       }
       if (winner == null) { add(rnd() < 0.5 ? { element: 'opp', result: 'F' } : { element: 'opp', result: 'P' }); winner = acts[acts.length - 1].result === 'F' ? 'us' : 'them'; }

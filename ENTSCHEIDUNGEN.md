@@ -36,6 +36,9 @@ Stand 9. November 2026, erster Prototyp.
 - **PDF und Excel** (10.11.2026): beides entsteht direkt auf dem Gerät, ohne Server. PDF mit jsPDF, Schriften IBM Plex und Barlow Condensed eingebettet (aus den App-Schriften umgewandelt, Skript `scripts/woff2ttf.py`). Aufbau: 1 Überblick (Ergebnis, Einleitung, 8 Kacheln, Fazit mit 8 neutralen Punkten, Satz für Satz), 2 Sätze und Spielerinnen, 3 Positionen, Aufschlag, So wurde gezählt, Datenqualität, 4 pro Satz (bei Profi mit Aufstellung), 5 nur Profi (Sideout und Break, Läufer, Phasen, Zielzonen, Zuspiel, Abwehr). Excel mit den Blättern Übersicht, Alle Werte, Läufer (nur Profi), Pro Satz, Aktionen (jede Aktion einzeln, bei Profi mit Ballwechsel, Läufer, Spielstand und Videozeit).
 - **Weitergeben:** fertige Datei im Dialog „ist fertig“. Auf dem iPad „Teilen oder sichern“ (Teilen-Menü: Dateien, WhatsApp, Mail), sonst Herunterladen. Gilt auch für die Sicherung. Export-Knöpfe in der Auswertung und in den Einstellungen.
 
+- **Abwehr** (10.11.2026, Momo): zwei Arten verlorener Bälle. „Fehler (vermeidbar)“ (Ballkontrolle, Absprache) zählt als eigener Fehler und senkt die Bilanz. „Gegner punktet (unhaltbar)“ ist ein gut erzielter Gegnerpunkt: Punkt für den Gegner, kein eigener Fehler, zählt bei „vom Gegner erspielt“. Zeichen im Bogen: = und ×.
+- **Veröffentlichung:** GitHub Pages über GitHub Actions (`.github/workflows/pages.yml`), baut bei jeder Änderung auf `main` neu.
+
 ## Nächste Schritte
 
 1. GitHub-Repository anlegen und über GitHub Pages veröffentlichen.

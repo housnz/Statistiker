@@ -97,15 +97,16 @@ export function ProReport({ match, actions, players }: { match: Match; actions: 
           <h2 style={{ marginTop: 8 }}>Abwehr</h2>
           {diggers.length ? (
             <table class="data">
-              <thead><tr><th>{W.one}</th><th>Abwehr</th><th>gut</th><th>ok</th><th>Fehler</th><th>gut %</th></tr></thead>
+              <thead><tr><th>{W.one}</th><th>Abwehr</th><th>gut</th><th>ok</th><th>Fehler (vermeidbar)</th><th>unhaltbar</th><th>gut %</th></tr></thead>
               <tbody>
                 {diggers.map((p) => {
                   const s = byPlayer.get(p.id!)!;
-                  return <tr><td>{p.number ?? ''} {p.name}</td><td>{s.dig}</td><td>{s.digG}</td><td>{s.digO}</td><td>{s.digE}</td><td>{pctLabel(s.digG, s.dig)}</td></tr>;
+                  return <tr><td>{p.number ?? ''} {p.name}</td><td>{s.dig}</td><td>{s.digG}</td><td>{s.digO}</td><td>{s.digE}</td><td>{s.digU}</td><td>{pctLabel(s.digG, s.dig)}</td></tr>;
                 })}
               </tbody>
             </table>
           ) : <p>Noch keine Abwehraktionen erfasst.</p>}
+          <p>Fehler (vermeidbar) zählen als eigene Fehler. Unhaltbare Bälle zählen als Punkt des Gegners, nicht als Fehler.</p>
         </section>
       </div>
 

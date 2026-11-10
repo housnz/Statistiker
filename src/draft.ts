@@ -67,7 +67,7 @@ const SYM: Record<string, Record<string, string>> = {
   blk: { K: '#', T: '+', E: '!' },
   oth: { E: '=' },
   set: { G: '#', L: '+', N: '−', E: '=' },
-  dig: { G: '#', O: '+', E: '=' },
+  dig: { G: '#', O: '+', E: '=', U: '×' },
 };
 
 /** Zeichen im Bogen: wie auf dem Papier (Positionsziffer bzw. Symbol), Farbe nach Ergebnis. */

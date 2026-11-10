@@ -149,7 +149,10 @@ export const ELEMENTS: ElementDef[] = [
     results: [
       { key: 'G', label: 'gut', effect: 'none', tone: 'good' },
       { key: 'O', label: 'ok', effect: 'none', tone: 'mid' },
-      { key: 'E', label: 'Fehler', effect: 'error', tone: 'bad' },
+      // Vermeidbar: Ballkontrolle, Absprache. Zählt als eigener Fehler.
+      { key: 'E', label: 'Fehler (vermeidbar)', effect: 'error', tone: 'bad' },
+      // Gut erzielter Gegnerpunkt, nicht zu halten. Kein eigener Fehler.
+      { key: 'U', label: 'Gegner punktet (unhaltbar)', effect: 'opppoint', tone: 'mid' },
     ],
   },
   {

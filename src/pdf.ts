@@ -374,7 +374,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   y = lastY() + 20;
   if (y > H - 200) { doc.addPage(); y = M; }
   y = h2('So wurde gezählt', y);
-  y = para('Punkte = Angriffspunkte + Asse + Blockpunkte. Fehler = Angriff (Fehler und geblockt) + Aufschlagfehler + Annahmefehler + Blockfehler + sonstige Fehler' + (match.mode === 'profi' ? ' + Zuspiel- und Abwehrfehler' : '') + '. Bilanz = Punkte minus Fehler. Kill-Quote = Angriffspunkte / Angriffe. Effizienz = (Punkte minus Fehler minus geblockt) / Angriffe. Aufschlagdruck = (Asse + gute Aufschläge) / alle Aufschläge. Annahme positiv = perfekt + gut. Vom Gegner erspielt = Gegnerpunkte minus eigene Fehler.', M, y, CW, 8, C.ink) + 10;
+  y = para('Punkte = Angriffspunkte + Asse + Blockpunkte. Fehler = Angriff (Fehler und geblockt) + Aufschlagfehler + Annahmefehler + Blockfehler + sonstige Fehler' + (match.mode === 'profi' ? ' + Zuspielfehler + vermeidbare Abwehrfehler (unhaltbare Bälle zählen als Gegnerpunkt)' : '') + '. Bilanz = Punkte minus Fehler. Kill-Quote = Angriffspunkte / Angriffe. Effizienz = (Punkte minus Fehler minus geblockt) / Angriffe. Aufschlagdruck = (Asse + gute Aufschläge) / alle Aufschläge. Annahme positiv = perfekt + gut. Vom Gegner erspielt = Gegnerpunkte minus eigene Fehler.', M, y, CW, 8, C.ink) + 10;
   font('Cond', 11); doc.text('Datenqualität', M, y, { baseline: 'top' }); y += 15;
   const dq = sums.map((s) => `Satz ${s.nr}: ${!s.final ? 'kein Endstand eingetragen' : s.missing === 0 ? 'geht auf' : s.missing > 0 ? `${pl(s.missing, 'eigener Punkt', 'eigene Punkte')} nicht notiert` : `${-s.missing} Punkte mehr erfasst als im Endstand`}`).join(' · ');
   y = para(`${dq}. Erfasst im Modus ${match.mode === 'profi' ? 'Profi' : 'Simpel'} mit der App Statistiker.`, M, y, CW, 8, C.muted);
@@ -492,9 +492,9 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     y = h2('Abwehr', y);
     autoTable(doc, {
       ...tableBase, startY: y,
-      head: [[P1, 'Abwehr', 'gut', 'ok', 'Fehler', 'gut %']],
-      body: diggers.length ? diggers.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.dig, s.digG, s.digO, s.digE, pctLabel(s.digG, s.dig)]) : [['keine Abwehraktionen erfasst', '', '', '', '', '']],
-      columnStyles: Object.fromEntries([1, 2, 3, 4, 5].map((i) => [i, { halign: 'right' as const }])),
+      head: [[P1, 'Abwehr', 'gut', 'ok', 'Fehler (vermeidbar)', 'unhaltbar', 'gut %']],
+      body: diggers.length ? diggers.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.dig, s.digG, s.digO, s.digE, s.digU, pctLabel(s.digG, s.dig)]) : [['keine Abwehraktionen erfasst', '', '', '', '', '', '']],
+      columnStyles: Object.fromEntries([1, 2, 3, 4, 5, 6].map((i) => [i, { halign: 'right' as const }])),
       didParseCell: (d) => alignHead(d as never),
     });
   }

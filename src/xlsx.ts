@@ -57,14 +57,14 @@ export async function buildXlsx({ match, actions, players, team }: { match: Matc
     'Aufschläge', 'Ass', 'Aufschlag gut', 'Aufschlag ok', 'Aufschlag schlecht', 'Aufschlag Fehler',
     'Annahmen', 'Annahme perfekt', 'Annahme gut', 'Annahme ok', 'Annahme schlecht', 'Annahme Fehler', 'Annahme positiv',
     'Blockpunkte', 'Block Touch', 'Blockfehler', 'Sonstige Fehler',
-    ...(profi ? ['Zuspiele', 'Zuspiel gut angreifbar', 'Zuspiel eingeschränkt', 'Zuspiel nicht angreifbar', 'Zuspielfehler', 'Abwehr', 'Abwehr gut', 'Abwehr ok', 'Abwehrfehler'] : [])];
+    ...(profi ? ['Zuspiele', 'Zuspiel gut angreifbar', 'Zuspiel eingeschränkt', 'Zuspiel nicht angreifbar', 'Zuspielfehler', 'Abwehr', 'Abwehr gut', 'Abwehr ok', 'Abwehrfehler (vermeidbar)', 'Abwehr unhaltbar'] : [])];
   const statRow = (nr: number | null, name: string, pos: string, s: PlayerStats, b = false): Row => [
     num(nr, b), txt(name, b), txt(pos, b), num(s.points, b), num(s.errors, b), num(s.balance, b),
     num(s.att, b), num(s.attK, b), num(s.attN, b), num(s.attB, b), num(s.attE, b), pct(s.attK, s.att, b), pct(s.attK - s.attE - s.attB, s.att, b),
     num(s.srv, b), num(s.srvA, b), num(s.srvG, b), num(s.srvO, b), num(s.srvS, b), num(s.srvE, b),
     num(s.rec, b), num(s.recP, b), num(s.recG, b), num(s.recO, b), num(s.recS, b), num(s.recE, b), pct(s.recP + s.recG, s.rec, b),
     num(s.blkK, b), num(s.blkT, b), num(s.blkE, b), num(s.othE, b),
-    ...(profi ? [num(s.set, b), num(s.setG, b), num(s.setL, b), num(s.setN, b), num(s.setE, b), num(s.dig, b), num(s.digG, b), num(s.digO, b), num(s.digE, b)] : []),
+    ...(profi ? [num(s.set, b), num(s.setG, b), num(s.setL, b), num(s.setN, b), num(s.setE, b), num(s.dig, b), num(s.digG, b), num(s.digO, b), num(s.digE, b), num(s.digU, b)] : []),
   ];
   const all: Row[] = [statHead.map(head), ...rows.map(({ p, s }) => statRow(p.number, p.name, p.position, s)), statRow(null, 'Team', '', tot, true)];
 
