@@ -3,7 +3,8 @@ import { useEffect, useMemo } from 'preact/hooks';
 import { db } from '../db';
 import type { Action, Match, Player } from '../model';
 import { distribution } from '../model';
-import { PlayerStats, bil, pctLabel, setSummary, statsByPlayer, teamStats } from '../stats';
+import { CAT, fmtVal, legendText, valueTables } from '../columns';
+import { bil, pctLabel, setSummary, statsByPlayer, teamStats } from '../stats';
 import { fmtDate, go, team, useLive, words } from '../state';
 import { setsWon } from './Home';
 import { DIST_COLORS } from './Scout';
@@ -151,34 +152,31 @@ export function Report({ matchId }: { matchId: number }) {
 
       <section class="panel">
         <h2>Alle Werte pro {W.one}</h2>
-        <div class="scroll-x">
-          <table class="data">
-            <thead>
-              <tr>
-                <th />
-                <th class="grp" colSpan={3}>Gesamt</th>
-                <th class="grp" colSpan={6}>Angriff</th>
-                <th class="grp" colSpan={3}>Aufschlag</th>
-                <th class="grp" colSpan={3}>Annahme</th>
-                <th class="grp" colSpan={3}>Block</th>
-                <th class="grp">Sonst.</th>
-              </tr>
-              <tr>
-                <th>{W.one}</th>
-                <th>Pkt</th><th>Fehler</th><th>Bilanz</th>
-                <th>Ges.</th><th>Pkt</th><th>geb.</th><th>Fehler</th><th>Kill</th><th>Eff.</th>
-                <th>Ges.</th><th>Ass</th><th>Fehler</th>
-                <th>Ges.</th><th>positiv</th><th>Fehler</th>
-                <th>Pkt</th><th>Touch</th><th>Fehler</th>
-                <th>Fehler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ p, s }) => <PRow name={`${p.number ?? ''} ${p.name}`} s={s} />)}
-              <PRow name="Team" s={tot} total />
-            </tbody>
-          </table>
-        </div>
+        {valueTables(match.mode === 'profi').map((groups) => (
+          <div class="scroll-x" style={{ marginBottom: 14 }}>
+            <table class="data cat">
+              <thead>
+                <tr>
+                  <th />
+                  {groups.map((g) => <th class="grp" colSpan={g.cols.length} style={{ background: CAT[g.key] }}>{g.label}</th>)}
+                </tr>
+                <tr>
+                  <th>{W.one}</th>
+                  {groups.map((g) => g.cols.map((c, k) => <th class={k === 0 ? 'gs' : ''} title={c.long} style={{ color: g.key === 'ges' ? undefined : tint(CAT[g.key]), background: `color-mix(in srgb, ${CAT[g.key]} 22%, transparent)` }}>{c.h}</th>))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...rows.map(({ p, s }) => ({ name: `${p.number ?? ''} ${p.name}`, s, total: false })), { name: 'Team', s: tot, total: true }].map((r) => (
+                  <tr class={r.total ? 'total' : ''}>
+                    <td>{r.name}</td>
+                    {groups.map((g) => g.cols.map((c, k) => <td class={k === 0 ? 'gs' : ''} style={{ background: `color-mix(in srgb, ${CAT[g.key]} ${r.total ? 24 : 10}%, transparent)` }}>{fmtVal(c.v(r.s))}</td>))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <p style={{ fontSize: 12 }}>{legendText(match.mode === 'profi')}</p>
       </section>
 
       <div class="two">
@@ -207,17 +205,7 @@ function Kpi({ l, v, s }: { l: string; v: string; s: string }) {
   return <div class="kpi"><span class="kick">{l}</span><span class="v">{v}</span><span class="s">{s}</span></div>;
 }
 
-function PRow({ name, s, total }: { name: string; s: PlayerStats; total?: boolean }) {
-  const eff = pctLabel(s.attK - s.attE - s.attB, s.att);
-  return (
-    <tr class={total ? 'total' : ''}>
-      <td>{name}</td>
-      <td>{s.points}</td><td>{s.errors}</td><td>{bil(s.balance)}</td>
-      <td>{s.att}</td><td>{s.attK}</td><td>{s.attB}</td><td>{s.attE}</td><td>{pctLabel(s.attK, s.att)}</td><td>{eff}</td>
-      <td>{s.srv}</td><td>{s.srvA}</td><td>{s.srvE}</td>
-      <td>{s.rec}</td><td>{pctLabel(s.recP + s.recG, s.rec)}</td><td>{s.recE}</td>
-      <td>{s.blkK}</td><td>{s.blkT}</td><td>{s.blkE}</td>
-      <td>{s.othE}</td>
-    </tr>
-  );
+/** Kategorie-Farbe aufgehellt, damit Schrift auf dunklem Grund gut lesbar ist. */
+function tint(hex: string) {
+  return `color-mix(in srgb, ${hex} 55%, white)`;
 }

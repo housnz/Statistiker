@@ -2,6 +2,7 @@
 import writeExcelFile from 'write-excel-file/browser';
 import { Action, EL, Match, Player, Team, effectOf, resultDef } from './model';
 import { proStats, replaySet } from './rally';
+import { CAT, Val, allGroups } from './columns';
 import { PlayerStats, setSummary, statsByPlayer, teamStats } from './stats';
 import { setsWon } from './screens/Home';
 
@@ -52,24 +53,22 @@ export async function buildXlsx({ match, actions, players, team }: { match: Matc
   ];
 
   // ---------- Alle Werte ----------
-  const statHead = ['Nr.', P1, 'Position', 'Punkte', 'Fehler', 'Bilanz',
-    'Angriffe', 'Angriff Punkt', 'Angriff im Spiel', 'Angriff geblockt', 'Angriff Fehler', 'Kill-Quote', 'Effizienz',
-    'Aufschläge', 'Ass', 'Aufschlag gut', 'Aufschlag ok', 'Aufschlag schlecht', 'Aufschlag Fehler',
-    'Annahmen', 'Annahme perfekt', 'Annahme gut', 'Annahme ok', 'Annahme schlecht', 'Annahme Fehler', 'Annahme positiv',
-    'Blockpunkte', 'Block Touch', 'Blockfehler', 'Sonstige Fehler',
-    ...(profi ? ['Zuspiele', 'Zuspiel gut angreifbar', 'Zuspiel eingeschränkt', 'Zuspiel nicht angreifbar', 'Zuspielfehler', 'Abwehr', 'Abwehr gut', 'Abwehr ok', 'Abwehrfehler (vermeidbar)', 'Abwehr unhaltbar'] : [])];
+  // Spalten nach Kategorie, in denselben Farben wie App und PDF (columns.ts).
+  const groups = allGroups(profi);
+  const catHead = (v: string, color: string): Cell => ({ value: v, type: String, fontWeight: 'bold', backgroundColor: color.toUpperCase(), textColor: '#FFFFFF' });
+  const groupRow: Row = [null, null, null, ...groups.flatMap((g) => [
+    { value: g.label === 'Sonst.' ? 'SONSTIGES' : g.label.toUpperCase(), type: String, fontWeight: 'bold' as const, backgroundColor: CAT[g.key].toUpperCase(), textColor: '#FFFFFF', align: 'center' as const, columnSpan: g.cols.length },
+    ...Array(g.cols.length - 1).fill(null),
+  ])];
+  const statHead: Cell[] = [head('Nr.'), head(P1), head('Position'), ...groups.flatMap((g) => g.cols.map((c) => catHead(c.long, CAT[g.key])))];
+  const valCell = (v: Val, b: boolean): Cell => ('pct' in v ? pct(v.pct[0], v.pct[1], b) : num('sgn' in v ? v.sgn : v.n, b));
   const statRow = (nr: number | null, name: string, pos: string, s: PlayerStats, b = false): Row => [
-    num(nr, b), txt(name, b), txt(pos, b), num(s.points, b), num(s.errors, b), num(s.balance, b),
-    num(s.att, b), num(s.attK, b), num(s.attN, b), num(s.attB, b), num(s.attE, b), pct(s.attK, s.att, b), pct(s.attK - s.attE - s.attB, s.att, b),
-    num(s.srv, b), num(s.srvA, b), num(s.srvG, b), num(s.srvO, b), num(s.srvS, b), num(s.srvE, b),
-    num(s.rec, b), num(s.recP, b), num(s.recG, b), num(s.recO, b), num(s.recS, b), num(s.recE, b), pct(s.recP + s.recG, s.rec, b),
-    num(s.blkK, b), num(s.blkT, b), num(s.blkE, b), num(s.othE, b),
-    ...(profi ? [num(s.set, b), num(s.setG, b), num(s.setL, b), num(s.setN, b), num(s.setE, b), num(s.dig, b), num(s.digG, b), num(s.digO, b), num(s.digE, b), num(s.digU, b)] : []),
+    num(nr, b), txt(name, b), txt(pos, b), ...groups.flatMap((g) => g.cols.map((c) => valCell(c.v(s), b))),
   ];
-  const all: Row[] = [statHead.map(head), ...rows.map(({ p, s }) => statRow(p.number, p.name, p.position, s)), statRow(null, 'Team', '', tot, true)];
+  const all: Row[] = [groupRow, statHead, ...rows.map(({ p, s }) => statRow(p.number, p.name, p.position, s)), statRow(null, 'Team', '', tot, true)];
 
   // ---------- Pro Satz ----------
-  const perSet: Row[] = [['Satz', ...statHead].map(head)];
+  const perSet: Row[] = [[null, ...groupRow], [head('Satz'), ...statHead]];
   for (const s of sums) {
     const acts = actions.filter((a) => a.set === s.nr);
     const sp = statsByPlayer(acts);
@@ -105,8 +104,8 @@ export async function buildXlsx({ match, actions, players, team }: { match: Matc
 
   const sheets: { data: Row[]; sheet: string; columns?: { width: number }[]; stickyRowsCount?: number; stickyColumnsCount?: number }[] = [
     { data: over, sheet: 'Übersicht', columns: [{ width: 14 }, { width: 22 }, ...Array(8).fill({ width: 13 })] },
-    { data: all, sheet: 'Alle Werte', columns: [{ width: 6 }, { width: 18 }, { width: 11 }, ...Array(statHead.length - 3).fill({ width: 11 })], stickyRowsCount: 1, stickyColumnsCount: 2 },
-    { data: perSet, sheet: 'Pro Satz', columns: [{ width: 6 }, { width: 6 }, { width: 18 }, { width: 11 }, ...Array(statHead.length - 3).fill({ width: 11 })], stickyRowsCount: 1, stickyColumnsCount: 3 },
+    { data: all, sheet: 'Alle Werte', columns: [{ width: 6 }, { width: 18 }, { width: 11 }, ...Array(statHead.length - 3).fill({ width: 11 })], stickyRowsCount: 2, stickyColumnsCount: 2 },
+    { data: perSet, sheet: 'Pro Satz', columns: [{ width: 6 }, { width: 6 }, { width: 18 }, { width: 11 }, ...Array(statHead.length - 3).fill({ width: 11 })], stickyRowsCount: 2, stickyColumnsCount: 3 },
     { data: acts, sheet: 'Aktionen', columns: actHead.map((h) => ({ width: h === 'Name' ? 22 : h.length > 9 ? 13 : 10 })), stickyRowsCount: 1 },
   ];
 

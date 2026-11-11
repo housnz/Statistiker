@@ -352,6 +352,9 @@ table.data th.grp { text-align: center; border-bottom: 1px solid var(--ink); }
 .rep table.data thead tr:first-child th, .rep table.data tr.total td { border-color: var(--r-text); }
 .rep table.data th.grp { border-color: var(--r-muted); }
 .rep table.data thead th { color: var(--r-muted); }
+.rep table.data.cat th.grp { color: #fff; text-align: center; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; border: 0; }
+.rep table.data.cat .gs { border-left: 3px solid #0f131a; }
+.rep table.data.cat th, .rep table.data.cat td { white-space: nowrap; }
 .rep .distbar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; gap: 2px; }
 .rep .distbar div { display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; min-width: 0; overflow: hidden; }
 .rep p { margin: 0; color: var(--r-muted); font-size: 14px; line-height: 1.5; }

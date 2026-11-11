@@ -21,6 +21,7 @@ Tests laufen mit Playwright (in Cloud-Sitzungen vorinstalliert, `require('playwr
 - `src/stats.ts`: Kennzahlen pro Person und Satz. `src/rally.ts`: Profi-Logik (Ballwechsel aus der Reihenfolge, Rotation, Läufer, Profi-Kennzahlen, Zielzonen).
 - `src/draft.ts`: Eingabe-Entwurf, „Schritt zurück“, Bogen-Zeichen.
 - `src/screens/Scout.tsx` (Simpel, Bogen), `ProScout.tsx` (Profi mit Video, Aufstellung, Wechsel), `Report.tsx` + `ProReport.tsx` (Auswertung, immer dunkel), `Home.tsx`, `Roster.tsx`, `NewMatch.tsx`, `Settings.tsx`, `Teams.tsx`.
+- `src/columns.ts`: Spalten-Gruppen und Kategorie-Farben für „Alle Werte“ (gemeinsam für App, PDF, Excel).
 - `src/pdf.ts` (jsPDF + jspdf-autotable, Schriften als TTF in `src/assets/pdf-fonts/`, erzeugt mit `scripts/woff2ttf.py`), `src/xlsx.ts` (write-excel-file), `src/exporting.ts`, `src/share.tsx` (Teilen-Menü, Download, Download-Funktion von claude.ai-Vorschauen).
 - `src/video.tsx`: Video nur im Speicher, gespeichert werden Name und Videozeit pro Aktion.
 - `src/db.ts`: Dexie-Schema (Version 2), Sicherung als JSON.

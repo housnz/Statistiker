@@ -9,6 +9,7 @@ import fontBarlow from './assets/pdf-fonts/BarlowCond-ExtraBold.ttf?url';
 import appLogo from './assets/logo.webp';
 import { Action, Match, Player, Team, distribution } from './model';
 import { proStats, zoneStats } from './rally';
+import { CAT, Group, fmtVal, legendText, valueTables } from './columns';
 import { PlayerStats, pct, pctLabel, setSummary, statsByPlayer, teamStats } from './stats';
 import { setsWon } from './screens/Home';
 
@@ -20,10 +21,6 @@ const C = {
   p4: '#3b82f6', p3: '#14b8a6', p2: '#a855f7', back: '#f97316', so: '#3b82f6', bp: '#14b8a6',
 };
 
-/** Farben der Kategorien in Tabellen. Bewusst kein Grün und Rot, weil keine Wertung. */
-const CAT = {
-  ges: '#16181d', att: '#2563eb', srv: '#0d9488', rec: '#7c3aed', blk: '#c2410c', oth: '#64748b',
-};
 
 async function b64(url: string): Promise<string> {
   const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
@@ -141,7 +138,8 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   };
   /** Tabelle mit farbigen Kategorien: Kopf in der Kategorie-Farbe, Spalten leicht getönt, Trennlinie zwischen den Kategorien.
    *  Die letzte Zeile ist die Team-Zeile (fett). */
-  const catTable = (startY: number, groups: [string, string, string[]][], body: (string | number)[][], firstW: number, size: number) => {
+  const catTable = (startY: number, groups: [string, string, string[]][], body: (string | number)[][], firstW: number, size: number, opt: { first?: string; team?: boolean } = {}) => {
+    const hasTeam = opt.team ?? true;
     const colCat: string[] = [''];
     const groupStart = new Set<number>();
     for (const [, col, subs] of groups) { groupStart.add(colCat.length); subs.forEach(() => colCat.push(col)); }
@@ -151,7 +149,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
       styles: { ...tableBase.styles, fontSize: size, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 3 } },
       head: [
         [{ content: '' }, ...groups.map(([lab, col, subs]) => ({ content: lab.toUpperCase(), colSpan: subs.length, styles: { halign: 'center' as const, fillColor: col, textColor: '#ffffff', fontSize: 7.5, lineWidth: 0 } }))],
-        [P1, ...groups.flatMap(([, , subs]) => subs)],
+        [opt.first ?? P1, ...groups.flatMap(([, , subs]) => subs)],
       ],
       body,
       // Zahlen nie umbrechen. Die Namensspalte nimmt den Rest (firstW = 0) oder hat eine feste Breite.
@@ -160,7 +158,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
         alignHead(d as never);
         if (d.section === 'head' && d.row.index === 0) d.cell.styles.halign = 'center';
         const i = d.column.index;
-        const team = d.section === 'body' && d.row.index === body.length - 1;
+        const team = hasTeam && d.section === 'body' && d.row.index === body.length - 1;
         if (team) d.cell.styles.fontStyle = 'bold';
         if (i === 0) { if (team) d.cell.styles.fillColor = C.soft2; return; }
         const col = colCat[i];
@@ -174,6 +172,16 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
       },
     });
   };
+  /** Passt eine Tabelle mit so vielen Zeilen (plus Überschrift) noch auf die Seite? Sonst neue Seite. */
+  const fits = (y0: number, bodyRows: number, extra = 0) => {
+    if (y0 + extra + (bodyRows + 2) * 15 + 20 <= H - M - 24) return y0;
+    doc.addPage();
+    return M;
+  };
+  /** Tabelle „Alle Werte“ aus den gemeinsamen Spalten-Gruppen (columns.ts). */
+  const groupTable = (startY: number, groups: Group[], list: { name: string; s: PlayerStats }[], size: number) =>
+    catTable(startY, groups.map((g) => [g.label, CAT[g.key], g.cols.map((c) => c.h)]),
+      list.map(({ name: nm, s: st }) => [nm, ...groups.flatMap((g) => g.cols.map((c) => fmtVal(c.v(st))))]), 0, size);
   // Überschriften wie die Spalte darunter ausrichten (Zahlen rechts).
   const alignHead = (d: { section: string; column: { index: number }; cell: { styles: { halign?: string } }; row: { raw: unknown } }) => {
     if (d.section === 'head' && d.column.index > 0 && ((d.cell as { colSpan?: number }).colSpan ?? 1) === 1) d.cell.styles.halign = 'right';
@@ -328,18 +336,17 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   font('Plex', 7, true, C.muted); doc.text('BILANZ', W - M, y + 2, { align: 'right', baseline: 'top' });
   y += 22;
 
+  // Profi: alle Werte auf einer eigenen Seite, in drei Tabellen, damit nichts abgeschnitten wird.
+  const profiMode = match.mode === 'profi';
+  if (profiMode) { doc.addPage(); y = M; }
   y = h2(`Alle Werte pro ${P1}`, y);
-  const row = (n: string, s: PlayerStats) => [n, s.points, s.errors, sgn(s.balance), s.att, s.attK, s.attB, s.attE, pctLabel(s.attK, s.att),
-    pctLabel(s.attK - s.attE - s.attB, s.att), s.srv, s.srvA, s.srvE, s.rec, pctLabel(s.recP + s.recG, s.rec), s.recE, s.blkK, s.blkT, s.blkE, s.othE];
-  catTable(y, [
-    ['Gesamt', CAT.ges, ['Pkt', 'Fehl.', 'Bil.']],
-    ['Angriff', CAT.att, ['Ges.', 'Pkt', 'geb.', 'Fehl.', 'Kill', 'Eff.']],
-    ['Aufschlag', CAT.srv, ['Ges.', 'Ass', 'Fehl.']],
-    ['Annahme', CAT.rec, ['Ges.', 'pos.', 'Fehl.']],
-    ['Block', CAT.blk, ['Pkt', 'Touch', 'Fehl.']],
-    ['Sonst.', CAT.oth, ['Fehl.']],
-  ], [...rows.map(({ p, s }) => row(`${p.number ?? ''} ${p.name}`.trim(), s)), row('Team', tot)], 0, 7);
-  para('Pkt = Punkte, Fehl. = Fehler, Bil. = Bilanz, Ges. = gesamt, geb. = geblockt, pos. = positiv (perfekt + gut). Kill = Angriffspunkte / Angriffe. Eff. = (Punkte minus Fehler minus geblockt) / Angriffe.', M, lastY() + 6, CW, 7, C.muted);
+  const valueRows = [...rows.map(({ p, s }) => ({ name: `${p.number ?? ''} ${p.name}`.trim(), s })), { name: 'Team', s: tot }];
+  for (const groups of valueTables(profiMode)) {
+    y = fits(y, valueRows.length);
+    groupTable(y, groups, valueRows, 7);
+    y = lastY() + 12;
+  }
+  para(legendText(profiMode), M, y - 6, CW, 7, C.muted);
 
   // ================= Seite 3: Positionen und Aufschlag =================
   doc.addPage();
@@ -401,14 +408,9 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
 
   y = h2(`Aufschlag pro ${P1}`, y);
   const servers = rows.filter((r) => r.s.srv > 0);
-  autoTable(doc, {
-    ...tableBase, startY: y,
-    head: [[P1, 'Aufschläge', 'Ass', 'gut', 'ok', 'schlecht', 'Fehler', 'Druck', 'Fehlerquote']],
-    body: [...servers.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.srv, s.srvA, s.srvG, s.srvO, s.srvS, s.srvE, pctLabel(s.srvA + s.srvG, s.srv), pctLabel(s.srvE, s.srv)]),
-      ['Team', tot.srv, tot.srvA, tot.srvG, tot.srvO, tot.srvS, tot.srvE, pctLabel(tot.srvA + tot.srvG, tot.srv), pctLabel(tot.srvE, tot.srv)]],
-    columnStyles: Object.fromEntries([...Array(9).keys()].slice(1).map((i) => [i, { halign: 'right' as const }])),
-    didParseCell: (d) => { alignHead(d as never); if (d.section === 'body' && d.row.index === servers.length) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = C.soft; } },
-  });
+  catTable(y, [['Aufschlag', CAT.srv, ['Aufschläge', 'Ass', 'gut', 'ok', 'schlecht', 'Fehler', 'Druck', 'Fehlerquote']]],
+    [...servers.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.srv, s.srvA, s.srvG, s.srvO, s.srvS, s.srvE, pctLabel(s.srvA + s.srvG, s.srv), pctLabel(s.srvE, s.srv)]),
+      ['Team', tot.srv, tot.srvA, tot.srvG, tot.srvO, tot.srvS, tot.srvE, pctLabel(tot.srvA + tot.srvG, tot.srv), pctLabel(tot.srvE, tot.srv)]], 0, 8);
   y = lastY() + 20;
   if (y > H - 200) { doc.addPage(); y = M; }
   y = h2('So wurde gezählt', y);
@@ -425,7 +427,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     const sp = statsByPlayer(acts);
     const setRows = players.filter((p) => sp.has(p.id!)).map((p) => ({ p, s: sp.get(p.id!)! }));
     const st = teamStats(acts);
-    if (y > H - 160) { doc.addPage(); y = M; }
+    y = fits(y, setRows.length + 2, 30);
     font('Cond', 12);
     doc.text(`Satz ${s.nr} · ${s.final ? `${s.final[0]}:${s.final[1]}` : 'läuft'}`, M, y, { baseline: 'top' });
     const setInfo = match.sets.find((x) => x.nr === s.nr);
@@ -440,8 +442,10 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
       ['Aufschlag', CAT.srv, ['Ass', 'Fehler', 'Ges.']],
       ['Annahme', CAT.rec, ['positiv', 'Fehler', 'Ges.']],
       ['Block', CAT.blk, ['Punkt']],
+      ...(profiMode ? [['Zuspiel', CAT.set, ['gut', 'Fehler', 'Ges.']], ['Abwehr', CAT.dig, ['gut', 'Fehler', 'Ges.']]] as [string, string, string[]][] : []),
       ['Sonst.', CAT.oth, ['Fehler']],
-    ], [...setRows, { p: { name: 'Team', number: null } as unknown as Player, s: st }].map(({ p, s: x }) => [`${p.number ?? ''} ${p.name}`.trim(), x.points, x.errors, sgn(x.balance), x.attK, x.att, x.srvA, x.srvE, x.srv, x.recP + x.recG, x.recE, x.rec, x.blkK, x.othE]), 100, 7.5);
+    ], [...setRows, { p: { name: 'Team', number: null } as unknown as Player, s: st }].map(({ p, s: x }) => [`${p.number ?? ''} ${p.name}`.trim(), x.points, x.errors, sgn(x.balance), x.attK, x.att, x.srvA, x.srvE, x.srv, x.recP + x.recG, x.recE, x.rec, x.blkK,
+      ...(profiMode ? [x.setG, x.setE, x.set, x.digG, x.digE, x.dig] : []), x.othE]), profiMode ? 0 : 100, profiMode ? 7 : 7.5);
     const opp = acts.filter((a) => a.element === 'opp');
     y = para(`Gegner: ${opp.filter((a) => a.result === 'SE').length} Aufschlagfehler, ${opp.filter((a) => a.result === 'F').length} sonstige Fehler.${s.missing > 0 ? ` ${pl(s.missing, 'eigener Punkt', 'eigene Punkte')} nicht notiert.` : ''}`, M, lastY() + 5, CW, 7.5, C.muted) + 16;
   }
@@ -487,13 +491,8 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     y += 10;
     y = h2('Angriff nach Annahme und im Konter', y);
     const ph = (l: string, x: { all: number; k: number; b: number; e: number }) => [l, x.all, x.k, x.b, x.e, pctLabel(x.k, x.all), pctLabel(x.k - x.e - x.b, x.all)];
-    autoTable(doc, {
-      ...tableBase, startY: y,
-      head: [['', 'Angriffe', 'Punkte', 'geblockt', 'Fehler', 'Kill', 'Effizienz']],
-      body: [ph('nach Annahme', ps.attAfterRec), ph('Konter', ps.attTransition)],
-      columnStyles: Object.fromEntries([1, 2, 3, 4, 5, 6].map((i) => [i, { halign: 'right' as const }])),
-      didParseCell: (d) => alignHead(d as never),
-    });
+    catTable(y, [['Angriff', CAT.att, ['Angriffe', 'Punkte', 'geblockt', 'Fehler', 'Kill', 'Effizienz']]],
+      [ph('nach Annahme', ps.attAfterRec), ph('Konter', ps.attTransition)], 0, 8, { first: 'Phase', team: false });
     y = lastY() + 18;
     const zW = (CW - 20) / 2;
     const drawZones = (x: number, top: number, label: string, data: Record<number, { all: number; pts: number }>, ptl: string) => {
@@ -518,24 +517,18 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     y = zy + 12;
     if (y > H - 180) { doc.addPage(); y = M; }
     const setters = rows.filter((r) => r.s.set > 0), diggers = rows.filter((r) => r.s.dig > 0);
+    y = fits(y, setters.length + 1, 22);
     y = h2('Zuspiel', y);
-    autoTable(doc, {
-      ...tableBase, startY: y,
-      head: [[P1, 'Zuspiele', 'gut angreifbar', 'eingeschränkt', 'nicht angreifbar', 'Fehler', 'gut %']],
-      body: setters.length ? setters.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.set, s.setG, s.setL, s.setN, s.setE, pctLabel(s.setG, s.set)]) : [['keine Zuspiele erfasst', '', '', '', '', '', '']],
-      columnStyles: Object.fromEntries([1, 2, 3, 4, 5, 6].map((i) => [i, { halign: 'right' as const }])),
-      didParseCell: (d) => alignHead(d as never),
-    });
+    const setRow = (nm: string, s: PlayerStats) => [nm, s.set, s.setG, s.setL, s.setN, s.setE, pctLabel(s.setG, s.set)];
+    catTable(y, [['Zuspiel', CAT.set, ['Zuspiele', 'gut angreifbar', 'eingeschränkt', 'nicht angreifbar', 'Fehler', 'gut %']]],
+      setters.length ? [...setters.map(({ p, s }) => setRow(`${p.number ?? ''} ${p.name}`.trim(), s)), setRow('Team', tot)] : [['keine Zuspiele erfasst', '', '', '', '', '', '']], 0, 8, { team: setters.length > 0 });
     y = lastY() + 18;
     if (y > H - 140) { doc.addPage(); y = M; }
+    y = fits(y, diggers.length + 1, 22);
     y = h2('Abwehr', y);
-    autoTable(doc, {
-      ...tableBase, startY: y,
-      head: [[P1, 'Abwehr', 'gut', 'ok', 'Fehler (vermeidbar)', 'unhaltbar', 'gut %']],
-      body: diggers.length ? diggers.map(({ p, s }) => [`${p.number ?? ''} ${p.name}`.trim(), s.dig, s.digG, s.digO, s.digE, s.digU, pctLabel(s.digG, s.dig)]) : [['keine Abwehraktionen erfasst', '', '', '', '', '', '']],
-      columnStyles: Object.fromEntries([1, 2, 3, 4, 5, 6].map((i) => [i, { halign: 'right' as const }])),
-      didParseCell: (d) => alignHead(d as never),
-    });
+    const digRow = (nm: string, s: PlayerStats) => [nm, s.dig, s.digG, s.digO, s.digE, s.digU, pctLabel(s.digG, s.dig)];
+    catTable(y, [['Abwehr', CAT.dig, ['Abwehr', 'gut', 'ok', 'Fehler (vermeidbar)', 'unhaltbar', 'gut %']]],
+      diggers.length ? [...diggers.map(({ p, s }) => digRow(`${p.number ?? ''} ${p.name}`.trim(), s)), digRow('Team', tot)] : [['keine Abwehraktionen erfasst', '', '', '', '', '', '']], 0, 8, { team: diggers.length > 0 });
   }
 
   // ---------- Fußzeile ----------
