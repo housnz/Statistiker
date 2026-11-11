@@ -127,7 +127,7 @@ export const ELEMENTS: ElementDef[] = [
   },
   {
     key: 'rec', label: 'Annahme', short: 'R', needsPlayer: true,
-    positions: [5, 6, 1],
+    positions: [4, 3, 2, 5, 6, 1], // vorne selten (Netzroller, kurze Aufschläge), aber möglich
     results: [
       { key: 'P', label: 'perfekt', effect: 'none', tone: 'good' },
       { key: 'G', label: 'gut', effect: 'none', tone: 'ok' },

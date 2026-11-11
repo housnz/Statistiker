@@ -4,7 +4,7 @@ Stand 9. November 2026, erster Prototyp.
 
 - **Technik:** Preact, TypeScript, Vite, Dexie (IndexedDB). Kein Server, keine Cloud, kein Tracking.
 - **Eingabe-Reihenfolge:** Spielerin, Element, Ergebnis, dann Position bzw. Zone. Gespeichert wird automatisch, sobald alles Nötige getippt ist. Reihenfolge ist frei (Position kann auch vor dem Ergebnis kommen).
-- **Pflichtangaben:** Angriff braucht immer eine Position (4, 3, 2, 5, 6, 1), Annahme eine Position (5, 6, 1). Profi: Angriff und Aufschlag zusätzlich Zielzone 1 bis 6 im gegnerischen Feld, mit Knopf „ohne Zone“.
+- **Pflichtangaben:** Angriff braucht immer eine Position (4, 3, 2, 5, 6, 1), Annahme eine Position (alle sechs, seit 11.11.2026: vorne 4, 3, 2 für Netzroller und kurze Aufschläge, Wunsch von Momo). Profi: Angriff und Aufschlag zusätzlich Zielzone 1 bis 6 im gegnerischen Feld, mit Knopf „ohne Zone“.
 - **Gegnerfeld (Profi):** Zonen 1 bis 6 (Momo, 9.11.2026: statt 1 bis 9). Von unserer Seite gesehen hinten 1 6 5, vorne am Netz 2 3 4.
 - **Spielstand live:** eigene Punkte = Angriffspunkt, Ass, Blockpunkt, Gegner-Aufschlagfehler, Gegnerfehler. Gegnerpunkte = alle eigenen Fehler (inkl. geblockt) plus optional „Punkt Gegner (sonstiger)“.
 - **Zusatzknopf „Punkt Gegner (sonstiger)“** beim Gegner: freiwillig, damit der Spielstand in der App mitläuft. Zählt nicht als eigener Fehler.
@@ -41,6 +41,7 @@ Stand 9. November 2026, erster Prototyp.
 - **Texte und Vorzeichen** (10.11.2026): Einzahl wird ausgeschrieben („1 Punkt aus 1 Angriff“, „1 Ass“). Negative Werte stehen in App und PDF überall mit dem echten Minuszeichen (−). In Excel bleiben es Zahlen. Die Kachel „Eigene Fehler“ nennt im Profi-Spiel auch Zuspiel und Abwehr.
 - **Bogen: wer spielt, steht oben** (10.11.2026, Wunsch von Momo): Im Simpel-Bogen öffnet der Knopf „Wer spielt?“ eine Auswahl. Namen antippen, die Gewählten stehen oben, der Rest unter der Trennzeile „Bank“. Bewusst Antippen statt Ziehen, das geht am iPad schneller und sicherer. Die Auswahl gilt für das ganze Spiel und bleibt gespeichert (`court` am Spiel). Im Profi-Modus sortiert der Bogen-Reiter von selbst nach der Aufstellung (Feld und Libero oben).
 - **Spiel löschen** (10.11.2026, Wunsch von Momo): In der Spieleliste auf der Startseite hat jedes Spiel einen Knopf ✕. Nach einer Rückfrage werden das Spiel und alle seine Aktionen gelöscht. Nicht rückgängig zu machen, deshalb vorher Sicherung.
+- **PDF übersichtlicher** (11.11.2026, Wunsch von Momo nach zwei echten Spielen): Fazit als Liste mit Thema links (fett) und Text rechts, alles bündig. Tabellen „Alle Werte“ und „Pro Satz“ mit farbigen Kategorien: Kopf in der Farbe der Kategorie, Spalten leicht getönt, weiße Trennlinie dazwischen. Farben Gesamt Schwarz, Angriff Blau, Aufschlag Türkis, Annahme Violett, Block Orange, Sonstiges Grau. Bewusst kein Grün und Rot, weil keine Wertung. Abkürzungen stehen unter der Tabelle.
 - **Veröffentlichung:** GitHub Pages über GitHub Actions (`.github/workflows/pages.yml`), baut bei jeder Änderung auf `main` neu.
 
 ## Nächste Schritte

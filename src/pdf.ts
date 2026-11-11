@@ -20,6 +20,11 @@ const C = {
   p4: '#3b82f6', p3: '#14b8a6', p2: '#a855f7', back: '#f97316', so: '#3b82f6', bp: '#14b8a6',
 };
 
+/** Farben der Kategorien in Tabellen. Bewusst kein Grün und Rot, weil keine Wertung. */
+const CAT = {
+  ges: '#16181d', att: '#2563eb', srv: '#0d9488', rec: '#7c3aed', blk: '#c2410c', oth: '#64748b',
+};
+
 async function b64(url: string): Promise<string> {
   const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
   let s = '';
@@ -134,6 +139,41 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     styles: { font: 'Plex', fontStyle: 'normal' as const, fontSize: 8, cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 }, textColor: C.ink, lineColor: C.rule, lineWidth: { bottom: 0.5 } as never },
     headStyles: { font: 'Plex', fontStyle: 'bold' as const, fontSize: 7, textColor: C.muted, lineWidth: { bottom: 1 } as never, lineColor: C.ink },
   };
+  /** Tabelle mit farbigen Kategorien: Kopf in der Kategorie-Farbe, Spalten leicht getönt, Trennlinie zwischen den Kategorien.
+   *  Die letzte Zeile ist die Team-Zeile (fett). */
+  const catTable = (startY: number, groups: [string, string, string[]][], body: (string | number)[][], firstW: number, size: number) => {
+    const colCat: string[] = [''];
+    const groupStart = new Set<number>();
+    for (const [, col, subs] of groups) { groupStart.add(colCat.length); subs.forEach(() => colCat.push(col)); }
+    const n = colCat.length;
+    autoTable(doc, {
+      ...tableBase, startY,
+      styles: { ...tableBase.styles, fontSize: size, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 3 } },
+      head: [
+        [{ content: '' }, ...groups.map(([lab, col, subs]) => ({ content: lab.toUpperCase(), colSpan: subs.length, styles: { halign: 'center' as const, fillColor: col, textColor: '#ffffff', fontSize: 7.5, lineWidth: 0 } }))],
+        [P1, ...groups.flatMap(([, , subs]) => subs)],
+      ],
+      body,
+      // Zahlen nie umbrechen. Die Namensspalte nimmt den Rest (firstW = 0) oder hat eine feste Breite.
+      columnStyles: { 0: firstW ? { cellWidth: firstW } : { cellWidth: 'auto' as const }, ...Object.fromEntries([...Array(n).keys()].slice(1).map((i) => [i, { halign: 'right' as const, cellWidth: 'wrap' as const }])) },
+      didParseCell: (d) => {
+        alignHead(d as never);
+        if (d.section === 'head' && d.row.index === 0) d.cell.styles.halign = 'center';
+        const i = d.column.index;
+        const team = d.section === 'body' && d.row.index === body.length - 1;
+        if (team) d.cell.styles.fontStyle = 'bold';
+        if (i === 0) { if (team) d.cell.styles.fillColor = C.soft2; return; }
+        const col = colCat[i];
+        if (d.section === 'head' && d.row.index === 1) { d.cell.styles.fillColor = mix(col, 0.16); d.cell.styles.textColor = col === CAT.ges ? C.ink : col; }
+        if (d.section === 'body') d.cell.styles.fillColor = mix(col, team ? 0.16 : col === CAT.ges ? 0.02 : 0.06);
+      },
+      didDrawCell: (d) => {
+        if (d.column.index === 0 || !groupStart.has(d.column.index)) return;
+        doc.setDrawColor('#ffffff'); doc.setLineWidth(2);
+        doc.line(d.cell.x, d.cell.y, d.cell.x, d.cell.y + d.cell.height);
+      },
+    });
+  };
   // Überschriften wie die Spalte darunter ausrichten (Zahlen rechts).
   const alignHead = (d: { section: string; column: { index: number }; cell: { styles: { halign?: string } }; row: { raw: unknown } }) => {
     if (d.section === 'head' && d.column.index > 0 && ((d.cell as { colSpan?: number }).colSpan ?? 1) === 1) d.cell.styles.halign = 'right';
@@ -196,25 +236,27 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   y = h2('Fazit', y);
   const eff = tot.att ? Math.round(((tot.attK - tot.attE - tot.attB) / tot.att) * 100) : 0;
   const top3 = ranked.slice(0, 3).map((r) => `${name(r.p)} ${r.s.points}`).join(', ');
-  const fazit = [
-    `Angriff: ${pl(tot.attK, 'Punkt', 'Punkte')} aus ${pl(tot.att, 'Angriff', 'Angriffen')} (Kill-Quote ${pctLabel(tot.attK, tot.att)}), ${tot.attB} geblockt, ${tot.attE} Fehler, Effizienz ${String(eff).replace('-', '−')} %.`,
-    `Aufschlag: ${pl(tot.srvA, 'Ass', 'Asse')} und ${tot.srvE} Fehler bei ${pl(tot.srv, 'Aufschlag', 'Aufschlägen')}.`,
-    `Annahme: ${tot.rec} Annahmen, davon ${pctLabel(tot.recP + tot.recG, tot.rec)} positiv (${tot.recP} perfekt, ${tot.recG} gut) und ${tot.recE} Fehler.`,
-    `Block: ${tot.blkK} Blockpunkte, ${tot.blkT} gute Touches, ${tot.blkE} Blockfehler.`,
-    `Eigene Fehler: ${tot.errors} gesamt (Angriff ${tot.attE + tot.attB}, Aufschlag ${tot.srvE}, Annahme ${tot.recE}, Block ${tot.blkE}, Sonstiges ${tot.othE}${tot.setE + tot.digE ? `, Zuspiel und Abwehr ${tot.setE + tot.digE}` : ''}).`,
-    `Gegnerfehler: ${oppSE + oppF}, das sind ${pct(oppSE + oppF, ownPts)} % der eigenen Punkte.`,
-    `Meiste Punkte: ${top3 || 'keine'}.`,
-    `Zuspielverteilung: über 4 ${pctLabel(dist.p4, dist.total)}, über 3 ${pctLabel(dist.p3, dist.total)}, über 2 ${pctLabel(dist.p2, dist.total)}, hinten ${pctLabel(dist.back, dist.total)}.`,
+  const fazit: [string, string][] = [
+    ['Angriff', `${pl(tot.attK, 'Punkt', 'Punkte')} aus ${pl(tot.att, 'Angriff', 'Angriffen')} (Kill-Quote ${pctLabel(tot.attK, tot.att)}), ${tot.attB} geblockt, ${tot.attE} Fehler, Effizienz ${String(eff).replace('-', '−')} %.`],
+    ['Aufschlag', `${pl(tot.srvA, 'Ass', 'Asse')} und ${tot.srvE} Fehler bei ${pl(tot.srv, 'Aufschlag', 'Aufschlägen')}.`],
+    ['Annahme', `${pl(tot.rec, 'Annahme', 'Annahmen')}, davon ${pctLabel(tot.recP + tot.recG, tot.rec)} positiv (${tot.recP} perfekt, ${tot.recG} gut) und ${tot.recE} Fehler.`],
+    ['Block', `${pl(tot.blkK, 'Blockpunkt', 'Blockpunkte')}, ${pl(tot.blkT, 'guter Touch', 'gute Touches')}, ${pl(tot.blkE, 'Blockfehler', 'Blockfehler')}.`],
+    ['Eigene Fehler', `${tot.errors} gesamt (Angriff ${tot.attE + tot.attB}, Aufschlag ${tot.srvE}, Annahme ${tot.recE}, Block ${tot.blkE}, Sonstiges ${tot.othE}${tot.setE + tot.digE ? `, Zuspiel und Abwehr ${tot.setE + tot.digE}` : ''}).`],
+    ['Gegnerfehler', `${oppSE + oppF}, das sind ${pct(oppSE + oppF, ownPts)} % der eigenen Punkte.`],
+    ['Meiste Punkte', `${top3 || 'keine'}.`],
+    ['Zuspielverteilung', `über 4 ${pctLabel(dist.p4, dist.total)}, über 3 ${pctLabel(dist.p3, dist.total)}, über 2 ${pctLabel(dist.p2, dist.total)}, hinten ${pctLabel(dist.back, dist.total)}.`],
   ];
-  const colW = (CW - 16) / 2;
-  let fy = [y, y];
-  fazit.forEach((t, i) => {
-    const col = i < 4 ? 0 : 1;
-    const x = M + col * (colW + 16);
-    rect(x, fy[col] + 3.5, 3, 3, accent);
-    fy[col] = para(t, x + 9, fy[col], colW - 9, 8.5, C.ink, 1.35) + 5;
-  });
-  y = Math.max(...fy) + 10;
+  // Eine Zeile pro Thema: links das Thema fett, rechts der Text. So steht alles bündig untereinander.
+  const labW = 104;
+  doc.setDrawColor(C.ink); doc.setLineWidth(1); doc.line(M, y - 4, M + CW, y - 4);
+  for (const [lab, t] of fazit) {
+    font('Plex', 8.5, true); doc.text(lab, M, y + 2, { baseline: 'top' });
+    const ny = para(t, M + labW, y + 2, CW - labW, 8.5, C.ink, 1.35);
+    y = ny + 5;
+    doc.setDrawColor(C.rule); doc.setLineWidth(0.5); doc.line(M, y - 1, M + CW, y - 1);
+    y += 3;
+  }
+  y += 14;
 
   // Satz für Satz: woher die Punkte kamen
   y = h2('Satz für Satz: woher die Punkte kamen', y);
@@ -289,19 +331,15 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
   y = h2(`Alle Werte pro ${P1}`, y);
   const row = (n: string, s: PlayerStats) => [n, s.points, s.errors, sgn(s.balance), s.att, s.attK, s.attB, s.attE, pctLabel(s.attK, s.att),
     pctLabel(s.attK - s.attE - s.attB, s.att), s.srv, s.srvA, s.srvE, s.rec, pctLabel(s.recP + s.recG, s.rec), s.recE, s.blkK, s.blkT, s.blkE, s.othE];
-  autoTable(doc, {
-    ...tableBase, startY: y,
-    styles: { ...tableBase.styles, fontSize: 7, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 } },
-    head: [
-      [{ content: '' }, { content: 'Gesamt', colSpan: 3, styles: { halign: 'center' } }, { content: 'Angriff', colSpan: 6, styles: { halign: 'center' } },
-        { content: 'Aufschlag', colSpan: 3, styles: { halign: 'center' } }, { content: 'Annahme', colSpan: 3, styles: { halign: 'center' } },
-        { content: 'Block', colSpan: 3, styles: { halign: 'center' } }, { content: 'Sonst.', styles: { halign: 'center' } }],
-      [P1, 'Pkt', 'Fehl.', 'Bil.', 'Ges.', 'Pkt', 'geb.', 'Fehl.', 'Kill', 'Eff.', 'Ges.', 'Ass', 'Fehl.', 'Ges.', 'pos.', 'Fehl.', 'Pkt', 'Touch', 'Fehl.', 'Fehl.'],
-    ],
-    body: [...rows.map(({ p, s }) => row(`${p.number ?? ''} ${p.name}`.trim(), s)), row('Team', tot)],
-    columnStyles: { 0: { cellWidth: 78 }, ...Object.fromEntries([...Array(20).keys()].slice(1).map((i) => [i, { halign: 'right' as const }])) },
-    didParseCell: (d) => { alignHead(d as never); if (d.section === 'body' && d.row.index === rows.length) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = C.soft; } },
-  });
+  catTable(y, [
+    ['Gesamt', CAT.ges, ['Pkt', 'Fehl.', 'Bil.']],
+    ['Angriff', CAT.att, ['Ges.', 'Pkt', 'geb.', 'Fehl.', 'Kill', 'Eff.']],
+    ['Aufschlag', CAT.srv, ['Ges.', 'Ass', 'Fehl.']],
+    ['Annahme', CAT.rec, ['Ges.', 'pos.', 'Fehl.']],
+    ['Block', CAT.blk, ['Pkt', 'Touch', 'Fehl.']],
+    ['Sonst.', CAT.oth, ['Fehl.']],
+  ], [...rows.map(({ p, s }) => row(`${p.number ?? ''} ${p.name}`.trim(), s)), row('Team', tot)], 0, 7);
+  para('Pkt = Punkte, Fehl. = Fehler, Bil. = Bilanz, Ges. = gesamt, geb. = geblockt, pos. = positiv (perfekt + gut). Kill = Angriffspunkte / Angriffe. Eff. = (Punkte minus Fehler minus geblockt) / Angriffe.', M, lastY() + 6, CW, 7, C.muted);
 
   // ================= Seite 3: Positionen und Aufschlag =================
   doc.addPage();
@@ -334,7 +372,7 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
     const za = atts.filter((a) => a.pos === z);
     if (za.length) {
       const k = za.filter((a) => a.result === 'K').length, e = za.filter((a) => a.result === 'E' || a.result === 'B').length;
-      zoneAtt[z] = [`${pct(za.length, atts.length)} %`, `${za.length} Angriffe`, `Kill ${pct(k, za.length)} % · Eff. ${pctLabel(k - e, za.length)}`];
+      zoneAtt[z] = [`${pct(za.length, atts.length)} %`, pl(za.length, 'Angriff', 'Angriffe'), `Kill ${pct(k, za.length)} % · Eff. ${pctLabel(k - e, za.length)}`];
       shAtt[z] = za.length / Math.max(1, atts.length);
     }
     const zr = recs.filter((a) => a.pos === z);
@@ -396,13 +434,14 @@ export async function buildPdf({ match, actions, players, team }: PdfInput): Pro
       font('Plex', 7.5, false, C.muted);
       doc.text(`Aufstellung: ${setInfo.lineup.map((id, i) => `${roman[i]} ${name(pmap.get(id))}`).join(', ')}${setInfo.liberos?.length ? ` · Libero ${setInfo.liberos.map((id) => name(pmap.get(id))).join(', ')}` : ''}`, M + 110, y + 3, { baseline: 'top', maxWidth: CW - 110 });
     }
-    autoTable(doc, {
-      ...tableBase, startY: y + 18,
-      head: [[P1, 'Pkt', 'Fehler', 'Bilanz', 'Angriff (Pkt/Ges.)', 'Aufschlag (Ass/Fehl./Ges.)', 'Annahme (pos./Ges.)', 'Ann.-Fehler', 'Block', 'Sonst.']],
-      body: [...setRows, { p: { name: 'Team', number: null } as unknown as Player, s: st }].map(({ p, s: x }) => [`${p.number ?? ''} ${p.name}`.trim(), x.points, x.errors, sgn(x.balance), `${x.attK}/${x.att}`, `${x.srvA}/${x.srvE}/${x.srv}`, `${x.recP + x.recG}/${x.rec}`, x.recE, x.blkK, x.othE]),
-      columnStyles: Object.fromEntries([...Array(10).keys()].slice(1).map((i) => [i, { halign: 'right' as const }])),
-      didParseCell: (d) => { alignHead(d as never); if (d.section === 'body' && d.row.index === setRows.length) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = C.soft; } },
-    });
+    catTable(y + 18, [
+      ['Gesamt', CAT.ges, ['Pkt', 'Fehler', 'Bilanz']],
+      ['Angriff', CAT.att, ['Punkt', 'Ges.']],
+      ['Aufschlag', CAT.srv, ['Ass', 'Fehler', 'Ges.']],
+      ['Annahme', CAT.rec, ['positiv', 'Fehler', 'Ges.']],
+      ['Block', CAT.blk, ['Punkt']],
+      ['Sonst.', CAT.oth, ['Fehler']],
+    ], [...setRows, { p: { name: 'Team', number: null } as unknown as Player, s: st }].map(({ p, s: x }) => [`${p.number ?? ''} ${p.name}`.trim(), x.points, x.errors, sgn(x.balance), x.attK, x.att, x.srvA, x.srvE, x.srv, x.recP + x.recG, x.recE, x.rec, x.blkK, x.othE]), 100, 7.5);
     const opp = acts.filter((a) => a.element === 'opp');
     y = para(`Gegner: ${opp.filter((a) => a.result === 'SE').length} Aufschlagfehler, ${opp.filter((a) => a.result === 'F').length} sonstige Fehler.${s.missing > 0 ? ` ${pl(s.missing, 'eigener Punkt', 'eigene Punkte')} nicht notiert.` : ''}`, M, lastY() + 5, CW, 7.5, C.muted) + 16;
   }
